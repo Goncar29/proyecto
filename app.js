@@ -1,8 +1,8 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const usersFilePath = path.join(__dirname, 'users.json');
+const fs = require('fs'); // File system module to read files
+const path = require('path'); // Path module to handle file paths
+const usersFilePath = path.join(__dirname, 'users.json'); // Path to the users.json file
 const app = express();
 
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -70,9 +70,7 @@ app.get('/users', async (req, res) => {
         res.json(users);
     } catch (err) {
         console.error("Error al leer users.json:", err);
-        res
-            .status(500)
-            .json({ error: "Error al leer el archivo o archivo corrupto" });
+        res.status(500).json({ error: "Error con conexión de datos" });
     }
     // fs.readFile(usersFilePath, 'utf-8', (err, data) => {
     //     if (err) {
@@ -86,6 +84,22 @@ app.get('/users', async (req, res) => {
 
 });
 
+app.post('/users', async (req, res) => {
+    const newUser = req.body;
+    try {
+        const data = await fs.promises.readFile(usersFilePath, 'utf-8');
+        const users = JSON.parse(data);
+        users.push(newUser);
+        await fs.promises.writeFile(usersFilePath, JSON.stringify(users, null, 2));
+        res.status(201).json({
+            message: 'Usuario creado correctamente',
+            user: newUser
+        });
+    } catch (err) {
+        console.error('Error al guardar el usuario', err);
+        res.status(500).json({ error: 'Error con conexión de datos' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
