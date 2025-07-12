@@ -1,5 +1,6 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
+const { validateUser, isUniqueNumericId } = require('./utils/validations'); // Import validation functions
 const fs = require('fs'); // File system module to read files
 const path = require('path'); // Path module to handle file paths
 const usersFilePath = path.join(__dirname, 'users.json'); // Path to the users.json file
@@ -89,6 +90,12 @@ app.post('/users', async (req, res) => {
     try {
         const data = await fs.promises.readFile(usersFilePath, 'utf-8');
         const users = JSON.parse(data);
+        const validation = validateUser(newUser, users);
+        if (!validation.isValid) {
+            return res.status(400).json({
+                error: validation.error || 'Error de validación'
+            });
+        }
         users.push(newUser);
         await fs.promises.writeFile(usersFilePath, JSON.stringify(users, null, 2));
         res.status(201).json({
@@ -100,6 +107,61 @@ app.post('/users', async (req, res) => {
         res.status(500).json({ error: 'Error con conexión de datos' });
     }
 });
+
+app.put('/users/:id', async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    const updateUser = req.body;
+    // Validaciones faltantes: verificar que el ID existe y que los datos son correctos
+
+    try {
+        const data = await fs.promises.readFile(usersFilePath, 'utf-8');
+        let users = JSON.parse(data);
+        const validation = isUniqueNumericId(updateUser.id, users);
+        if (validation) {
+            return res.status(400).json({
+                error: 'El ID debe ser numérico y único.'
+            });
+        } else if (!users.some(user => user.id === userId)) {
+            return res.status(404).json({
+                error: 'Usuario no encontrado.'
+            });
+        }
+        users = users.map(user => {
+            return user.id === userId ? { ...user, ...updateUser } : user;
+        });
+        await fs.promises.writeFile(usersFilePath, JSON.stringify(users, null, 2));
+        res.status(200).json({
+            message: 'Usuario actualizado correctamente',
+            user: updateUser
+        });
+    } catch (error) {
+        console.error('Error al actualizar el usuario', error);
+        return res.status(500).json({ error: 'Error con conexión de datos' });
+    }
+});
+
+app.delete('/users/:id', async (req, res) => {
+    const userId = parseInt(req.params.id, 10);
+    try {
+        const data = await fs.promises.readFile(usersFilePath, 'utf-8');
+        let users = JSON.parse(data);
+        if (!users.some(user => user.id === userId)) {
+            return res.status(404).json({
+                error: 'Usuario no encontrado.'
+            });
+        }
+        users = users.filter(user => user.id !== userId);
+        await fs.promises.writeFile(usersFilePath, JSON.stringify(users, null, 2));
+        res.status(200).json({
+            message: 'Usuario eliminado correctamente',
+            userId: userId
+        });
+    } catch (error) {
+        console.error('Error al eliminar el usuario', error);
+        return res.status(500).json({ error: 'Error con conexión de datos' });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
