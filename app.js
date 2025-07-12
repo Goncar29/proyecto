@@ -1,5 +1,8 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
+
+const LoggerMiddleware = require('./middlewares/logger'); // Import the logger middleware
+const errorHandle = require('./middlewares/errorHandler'); // Import the error handler middleware
 const { validateUser, isUniqueNumericId } = require('./utils/validations'); // Import validation functions
 const fs = require('fs'); // File system module to read files
 const path = require('path'); // Path module to handle file paths
@@ -8,6 +11,8 @@ const app = express();
 
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
+app.use(LoggerMiddleware); // Use the logger middleware for all routes
+app.use(errorHandle); // Use the error handler middleware for all routes
 
 const PORT = process.env.PORT || 4000;
 
@@ -73,16 +78,6 @@ app.get('/users', async (req, res) => {
         console.error("Error al leer users.json:", err);
         res.status(500).json({ error: "Error con conexión de datos" });
     }
-    // fs.readFile(usersFilePath, 'utf-8', (err, data) => {
-    //     if (err) {
-    //         return res.status(500).json({
-    //             error: 'Error al leer el archivo de usuarios'
-    //         });
-    //     }
-    //     const user = JSON.parse(data);
-    //     res.json(user);
-    // })
-
 });
 
 app.post('/users', async (req, res) => {
@@ -111,7 +106,6 @@ app.post('/users', async (req, res) => {
 app.put('/users/:id', async (req, res) => {
     const userId = parseInt(req.params.id, 10);
     const updateUser = req.body;
-    // Validaciones faltantes: verificar que el ID existe y que los datos son correctos
 
     try {
         const data = await fs.promises.readFile(usersFilePath, 'utf-8');
@@ -160,6 +154,10 @@ app.delete('/users/:id', async (req, res) => {
         console.error('Error al eliminar el usuario', error);
         return res.status(500).json({ error: 'Error con conexión de datos' });
     }
+});
+
+app.get('/error', (req, res, next) => {
+    next(new Error("Error intencional"));
 });
 
 
