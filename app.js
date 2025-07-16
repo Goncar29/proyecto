@@ -1,5 +1,7 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
+const { PrismaClient } = require('@prisma/client'); // Import Prisma Client
+const prisma = new PrismaClient(); // Create an instance of Prisma Client
 
 const LoggerMiddleware = require('./middlewares/logger'); // Import the logger middleware
 const errorHandle = require('./middlewares/errorHandler'); // Import the error handler middleware
@@ -160,6 +162,15 @@ app.get('/error', (req, res, next) => {
     next(new Error("Error intencional"));
 });
 
+app.get('/db-users', async (req, res) => {
+    try {
+        const users = await prisma.user.findMany();
+        res.json(users);
+    } catch (error) {
+        console.error('Error al obtener usuarios de la base de datos:', error);
+        res.status(500).json({ error: 'Error con conexión a la base de datos' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
