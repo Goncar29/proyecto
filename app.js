@@ -6,6 +6,7 @@ const prisma = new PrismaClient(); // Create an instance of Prisma Client
 const LoggerMiddleware = require('./middlewares/logger'); // Import the logger middleware
 const errorHandle = require('./middlewares/errorHandler'); // Import the error handler middleware
 const { validateUser, isUniqueNumericId } = require('./utils/validations'); // Import validation functions
+const authenticateToken = require('./middlewares/auth'); // Import authentication middleware
 const fs = require('fs'); // File system module to read files
 const path = require('path'); // Path module to handle file paths
 const usersFilePath = path.join(__dirname, 'users.json'); // Path to the users.json file
@@ -170,6 +171,10 @@ app.get('/db-users', async (req, res) => {
         console.error('Error al obtener usuarios de la base de datos:', error);
         res.status(500).json({ error: 'Error con conexión a la base de datos' });
     }
+});
+
+app.get('/protected-route', authenticateToken, (req, res) => {
+    res.send('Esta es una ruta protegida, acceso permitido para el usuario autenticado.');
 });
 
 app.listen(PORT, () => {
