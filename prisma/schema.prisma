@@ -18,7 +18,7 @@ model User {
   name     String
   email    String @unique
   password String
-  roles    Role
+  role     Role
 }
 
 enum Role {

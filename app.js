@@ -2,6 +2,8 @@ require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const { PrismaClient } = require('@prisma/client'); // Import Prisma Client
 const prisma = new PrismaClient(); // Create an instance of Prisma Client
+const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
+const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token handling
 
 const LoggerMiddleware = require('./middlewares/logger'); // Import the logger middleware
 const errorHandle = require('./middlewares/errorHandler'); // Import the error handler middleware
@@ -175,6 +177,44 @@ app.get('/db-users', async (req, res) => {
 
 app.get('/protected-route', authenticateToken, (req, res) => {
     res.send('Esta es una ruta protegida, acceso permitido para el usuario autenticado.');
+});
+
+app.post('/register', async (req, res) => {
+    const { email, password, name } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    try {
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                name,
+                role: 'USER'
+            }
+        });
+        res.status(201).json({ message: 'Usuario registrado con éxito', user });
+    } catch (error) {
+        console.error('Error al registrar el usuario:', error);
+        res.status(500).json({ error: 'Error con conexión a la base de datos' });
+    }
+});
+
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
+
+        if (!user || !isPasswordValid) {
+            return res.status(401).json({ error: 'Usuario y/o contraseña incorrecta' });
+        }
+
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ message: 'Inicio de sesión exitoso', token });
+
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        res.status(500).json({ error: 'Error con conexión a la base de datos' });
+    }
 });
 
 app.listen(PORT, () => {
