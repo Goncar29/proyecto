@@ -5,10 +5,10 @@ const prisma = new PrismaClient(); // Create an instance of Prisma Client
 const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token handling
 
-const LoggerMiddleware = require('./middlewares/logger'); // Import the logger middleware
-const errorHandle = require('./middlewares/errorHandler'); // Import the error handler middleware
-const { validateUser, isUniqueNumericId } = require('./utils/validations'); // Import validation functions
-const authenticateToken = require('./middlewares/auth'); // Import authentication middleware
+const LoggerMiddleware = require('./src/middlewares/logger'); // Import the logger middleware
+const errorHandle = require('./src/middlewares/errorHandler'); // Import the error handler middleware
+const { validateUser, isUniqueNumericId } = require('./src/utils/validations'); // Import validation functions
+const authenticateToken = require('./src/middlewares/auth'); // Import authentication middleware
 const fs = require('fs'); // File system module to read files
 const path = require('path'); // Path module to handle file paths
 const usersFilePath = path.join(__dirname, 'users.json'); // Path to the users.json file
