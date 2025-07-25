@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables from .env file
+// require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const { PrismaClient } = require('@prisma/client'); // Import Prisma Client
 const prisma = new PrismaClient(); // Create an instance of Prisma Client

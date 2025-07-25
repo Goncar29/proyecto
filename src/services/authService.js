@@ -23,6 +23,7 @@ const registerUser = async (email, password, name) => {
 
 const loginUser = async (email, password) => {
     const user = await prisma.user.findUnique({ where: { email } });
+    console.log('User from DB:', user);
     const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
     if (!user || !isPasswordValid) {
         throw new Error('Usuario y/o contraseña incorrecta');

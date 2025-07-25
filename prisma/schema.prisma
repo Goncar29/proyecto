@@ -14,11 +14,28 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
-  role     Role
+  id          Int           @id @default(autoincrement())
+  name        String
+  email       String        @unique
+  password    String
+  role        Role
+  appointment Appointment[]
+}
+
+model Appointment {
+  id          Int       @id @default(autoincrement())
+  date        DateTime
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
+  timeBlockId Int
+}
+
+model TimeBlock {
+  id           Int           @id @default(autoincrement())
+  startTime    DateTime
+  endTime      DateTime
+  appointments Appointment[]
 }
 
 enum Role {
