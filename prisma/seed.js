@@ -52,7 +52,6 @@ async function main() {
             timeBlock: { connect: { id: timeBlock2.id } }
         }
     });
-        // await prisma.user.deleteMany();
 }
 
 main()
@@ -63,5 +62,3 @@ main()
     .finally(async () => {
         await prisma.$disconnect();
     });
-
-    
