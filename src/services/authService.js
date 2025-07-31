@@ -11,7 +11,7 @@ const registerUser = async (email, password, name) => {
                 email,
                 password: hashedPassword,
                 name,
-                role: 'USER'
+                role: 'PATIENT'
             }
         });
         return newUser;

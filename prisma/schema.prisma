@@ -8,31 +8,60 @@ datasource db {
 }
 
 model User {
-  id          Int           @id @default(autoincrement())
-  name        String
-  email       String        @unique
-  password    String
-  role        Role
-  appointment Appointment[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación si es paciente
+  appointments Appointment[] @relation("PatientAppointments")
+
+  // Relación si es doctor
+  doctorAppointments Appointment[] @relation("DoctorAppointments")
 }
 
 model Appointment {
-  id          Int       @id @default(autoincrement())
+  id          Int               @id @default(autoincrement())
   date        DateTime
-  userId      Int
   timeBlockId Int
-  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  patientId   Int
+  doctorId    Int
+  status      AppointmentStatus @default(PENDING)
+  notes       String?
+  reason      String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id])
+
+  patient User @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id])
 }
 
 model TimeBlock {
-  id           Int           @id @default(autoincrement())
-  startTime    DateTime
-  endTime      DateTime
+  id        Int      @id @default(autoincrement())
+  startTime DateTime
+  endTime   DateTime
+  date      DateTime @default(now()) // Indica para qué día aplica este bloque
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   appointments Appointment[]
 }
 
 enum Role {
   ADMIN
-  USER
+  PATIENT
+  DOCTOR
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
 }

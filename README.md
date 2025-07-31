@@ -28,20 +28,16 @@ Este proyecto es una API y aplicación web para la gestión de citas médicas, d
    ```bash
    npm install
    ```
-4. **Levanta la base de datos con Docker Compose:**
-   ```bash
-   docker-compose up -d
-   ```
-5. **Aplica las migraciones y genera el cliente Prisma:**
+4. **Aplica las migraciones y genera el cliente Prisma:**
    ```bash
    npx prisma migrate dev
    npx prisma generate
    ```
-6. **(Opcional) Ejecuta el seed para datos de ejemplo:**
+5. **(Opcional) Ejecuta el seed para datos de ejemplo:**
    ```bash
    node prisma/seed.js
    ```
-7. **Inicia la aplicación:**
+6. **Inicia la aplicación:**
    ```bash
    npm run dev
    # o
