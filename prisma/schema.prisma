@@ -29,7 +29,7 @@ model User {
 model Appointment {
   id          Int               @id @default(autoincrement())
   date        DateTime
-  timeBlockId Int
+  timeBlockId Int               @unique // ✅ Evita duplicar citas para un mismo bloque
   patientId   Int
   doctorId    Int
   status      AppointmentStatus @default(PENDING)
@@ -46,17 +46,17 @@ model Appointment {
 
 model TimeBlock {
   id        Int      @id @default(autoincrement())
-  doctorId  Int // NUEVO: indica a qué doctor pertenece este bloque
+  doctorId  Int
   startTime DateTime
   endTime   DateTime
-  date      DateTime @default(now()) // día para el que aplica el bloque
+  date      DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  doctor       User          @relation(fields: [doctorId], references: [id])
-  appointments Appointment[]
+  doctor      User         @relation(fields: [doctorId], references: [id])
+  appointment Appointment? // ✅ Solo puede tener una cita (opcional)
 }
 
 enum Role {
