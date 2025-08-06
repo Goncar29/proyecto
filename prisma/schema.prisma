@@ -21,6 +21,9 @@ model User {
 
   // Relación si es doctor
   doctorAppointments Appointment[] @relation("DoctorAppointments")
+
+  // Relación con los bloques de tiempo que ofrece el doctor
+  timeBlocks TimeBlock[]
 }
 
 model Appointment {
@@ -35,21 +38,24 @@ model Appointment {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
+  // Relaciones
   timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id])
-
-  patient User @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctor  User @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient   User      @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id])
 }
 
 model TimeBlock {
   id        Int      @id @default(autoincrement())
+  doctorId  Int // NUEVO: indica a qué doctor pertenece este bloque
   startTime DateTime
   endTime   DateTime
-  date      DateTime @default(now()) // Indica para qué día aplica este bloque
+  date      DateTime @default(now()) // día para el que aplica el bloque
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relaciones
+  doctor       User          @relation(fields: [doctorId], references: [id])
   appointments Appointment[]
 }
 

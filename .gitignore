@@ -143,4 +143,6 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 about.md
+modelo.dbml
+AppoinmentsDoctor.png
 /generated/prisma
