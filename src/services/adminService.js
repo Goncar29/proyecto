@@ -21,4 +21,16 @@ const listReservationsService = async () => {
     return reservations;
 };
 
-module.exports = { createTimeBlockService, listReservationsService };
+const getUsersService = async () => {
+    const users = await prisma.user.findMany({
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true
+        }
+    });
+    return users;
+};
+
+module.exports = { createTimeBlockService, listReservationsService, getUsersService };
