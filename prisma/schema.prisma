@@ -1,44 +1,34 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password         String
+  role             Role
+  isActive         Boolean   @default(true) // Nuevo: para soft delete
+  isSuspended      Boolean   @default(false) // Nuevo: para suspender usuario
+  suspensionReason String? // Nuevo: motivo de suspensión
+  deletedAt        DateTime? // Nuevo: timestamp si fue eliminado
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  // Relación si es paciente
-  appointments Appointment[] @relation("PatientAppointments")
-
-  // Relación si es doctor
+  appointments       Appointment[] @relation("PatientAppointments")
   doctorAppointments Appointment[] @relation("DoctorAppointments")
-
-  // Relación con los bloques de tiempo que ofrece el doctor
-  timeBlocks TimeBlock[]
+  timeBlocks         TimeBlock[]
+  auditLogs          AuditLog[] // Nuevo: relación con logs
 }
 
 model Appointment {
   id          Int               @id @default(autoincrement())
   date        DateTime
-  timeBlockId Int               @unique // ✅ Evita duplicar citas para un mismo bloque
+  timeBlockId Int               @unique
   patientId   Int
   doctorId    Int
-  status      AppointmentStatus @default(PENDING)
+  status      AppointmentStatus @default(PENDING) // Enum ya definido
   notes       String?
   reason      String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  // Relaciones
   timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id])
   patient   User      @relation("PatientAppointments", fields: [patientId], references: [id])
   doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id])
@@ -50,13 +40,20 @@ model TimeBlock {
   startTime DateTime
   endTime   DateTime
   date      DateTime @default(now())
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relaciones
   doctor      User         @relation(fields: [doctorId], references: [id])
-  appointment Appointment? // ✅ Solo puede tener una cita (opcional)
+  appointment Appointment?
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 enum Role {
