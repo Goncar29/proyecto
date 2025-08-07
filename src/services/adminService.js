@@ -27,10 +27,29 @@ const getUsersService = async () => {
             id: true,
             email: true,
             name: true,
-            role: true
+            role: true,
+            createdAt: true,
+            updatedAt: true
         }
     });
     return users;
 };
 
-module.exports = { createTimeBlockService, listReservationsService, getUsersService };
+const getUserIdService = async (id) => {
+    const user = await prisma.user.findUnique({
+        where: {
+            id: Number(id), 
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true
+        }
+    });
+    return user;
+};
+
+module.exports = { createTimeBlockService, listReservationsService, getUsersService, getUserIdService };

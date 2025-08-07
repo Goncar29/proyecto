@@ -1,20 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
   id               Int       @id @default(autoincrement())
   name             String
   email            String    @unique
   password         String
   role             Role
-  isActive         Boolean   @default(true) // Nuevo: para soft delete
-  isSuspended      Boolean   @default(false) // Nuevo: para suspender usuario
-  suspensionReason String? // Nuevo: motivo de suspensión
-  deletedAt        DateTime? // Nuevo: timestamp si fue eliminado
+  isActive         Boolean   @default(true)
+  isSuspended      Boolean   @default(false)
+  suspensionReason String?
+  deletedAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  appointments       Appointment[] @relation("PatientAppointments")
+  // Relación si es paciente
+  appointments Appointment[] @relation("PatientAppointments")
+
+  // Relación si es doctor
   doctorAppointments Appointment[] @relation("DoctorAppointments")
-  timeBlocks         TimeBlock[]
-  auditLogs          AuditLog[] // Nuevo: relación con logs
+
+  // Relación con los bloques de tiempo que ofrece el doctor
+  timeBlocks TimeBlock[]
+
+  // Relación con los logs de auditoría
+  auditLogs AuditLog[]
 }
 
 model Appointment {
@@ -23,7 +39,7 @@ model Appointment {
   timeBlockId Int               @unique
   patientId   Int
   doctorId    Int
-  status      AppointmentStatus @default(PENDING) // Enum ya definido
+  status      AppointmentStatus @default(PENDING)
   notes       String?
   reason      String?
   createdAt   DateTime          @default(now())
