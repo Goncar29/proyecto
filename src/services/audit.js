@@ -8,19 +8,29 @@ const prisma = new PrismaClient();
  * @param {string} action - Descripción de la acción (ej. "login", "register").
  * @param {object} [metadata] - Información adicional (IP, UA, etc.).
  */
-async function logAudit(userId, action, metadata = {}) {
+const logAudit = async (userId, action) => {
     try {
         await prisma.auditLog.create({
             data: {
                 userId,
                 action,
-                metadata,          // Prisma soporta JSONB en Postgres
             },
         });
-    } catch (e) {
+    } catch (error) {
         // No queremos que la auditoría falle la operación principal
-        console.error('[AuditLog] Error al registrar auditoría:', e);
+        console.error('[AuditLog] Error al registrar auditoría:', error);
+        throw new Error('Error con conexión a la base de datos');
     }
 }
 
-module.exports = { logAudit };
+const getAuditLogs = async () => {
+    return await prisma.auditLog.findMany({
+        include: {
+            user: { select: { id: true, name: true, email: true, role: true } }
+        },
+        orderBy: { timestamp: 'desc' }
+    });
+};
+
+module.exports = { logAudit, getAuditLogs };
+
