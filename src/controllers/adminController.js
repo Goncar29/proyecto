@@ -5,10 +5,26 @@ const createTimeBlock = async (req, res) => {
         return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { startTime, endTime } = req.body;
+    const { doctorId, startTime, endTime } = req.body;
+
+    // Validaciones según el schema
+    if (!doctorId || isNaN(doctorId)) {
+        return res.status(400).json({ error: 'doctorId is required and must be a number' });
+    }
+    if (!startTime || !endTime) {
+        return res.status(400).json({ error: 'startTime and endTime are required' });
+    }
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isNaN(start) || isNaN(end)) {
+        return res.status(400).json({ error: 'startTime and endTime must be valid dates' });
+    }
+    if (start >= end) {
+        return res.status(400).json({ error: 'startTime must be before endTime' });
+    }
 
     try {
-        const newTimeBlock = await createTimeBlockService(startTime, endTime);
+        const newTimeBlock = await createTimeBlockService(doctorId, startTime, endTime);
         res.status(201).json(newTimeBlock);
     } catch (error) {
         res.status(500).json({ error: 'Error creating time block' });
@@ -56,7 +72,13 @@ const getUserId = async (req, res) => {
         }
 
         const user = await getUserIdService(id);
-        res.json(user);
+        if (!user || user.deletedAt) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // No exponer password
+        const { password, ...userSafe } = user;
+        res.json(userSafe);
     } catch (error) {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Error fetching users' });

@@ -48,6 +48,8 @@ model Appointment {
   timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id])
   patient   User      @relation("PatientAppointments", fields: [patientId], references: [id])
   doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id])
+
+  @@unique([timeBlockId, patientId])
 }
 
 model TimeBlock {
@@ -61,6 +63,8 @@ model TimeBlock {
 
   doctor      User         @relation(fields: [doctorId], references: [id])
   appointment Appointment?
+
+  @@unique([doctorId, startTime, endTime])
 }
 
 model AuditLog {
