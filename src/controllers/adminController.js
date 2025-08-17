@@ -85,4 +85,18 @@ const getUserId = async (req, res) => {
     }
 };
 
-module.exports = { createTimeBlock, listReservations, getUsers, getUserId };
+const updateUserId = async (req, res) => {
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+    try {
+        const updated = await updateUserService(req.params.id, req.body);
+        res.status(200).json(updated);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Error fetching users' });
+    }
+
+};
+
+module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId };

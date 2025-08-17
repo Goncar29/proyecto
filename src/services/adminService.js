@@ -37,14 +37,14 @@ const getUsersService = async () => {
 
 const getUserIdService = async (id) => {
     const user = await prisma.user.findUnique({
-        where: {
-            id: Number(id), 
-        },
+        where: { id: Number(id) },
         select: {
             id: true,
             email: true,
             name: true,
             role: true,
+            isActive: true,
+            isSuspended: true,
             createdAt: true,
             updatedAt: true
         }
@@ -52,4 +52,24 @@ const getUserIdService = async (id) => {
     return user;
 };
 
-module.exports = { createTimeBlockService, listReservationsService, getUsersService, getUserIdService };
+const updateUserService = async (id, data) => {
+    return await prisma.user.update({
+        where: { id: Number(id) },
+        data: {
+            name: data.name,
+            email: data.email,
+            role: data.role,
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            isActive: true,
+            isSuspended: true,
+            updatedAt: true
+        }
+    })
+};
+
+module.exports = { createTimeBlockService, listReservationsService, getUsersService, getUserIdService, updateUserService };
