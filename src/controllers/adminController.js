@@ -96,7 +96,19 @@ const updateUserId = async (req, res) => {
         console.error('Error fetching users:', error);
         res.status(500).json({ error: 'Error fetching users' });
     }
-
 };
 
-module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId };
+const deleteUserId = async (req, res) => {
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+    try {
+        await deleteUserIdService(req.params.id);
+        res.status(204).json({ message: 'User deleted successfully' })
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Error deleting user' });
+    }
+};
+
+module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId };

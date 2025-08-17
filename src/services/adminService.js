@@ -72,4 +72,17 @@ const updateUserService = async (id, data) => {
     })
 };
 
-module.exports = { createTimeBlockService, listReservationsService, getUsersService, getUserIdService, updateUserService };
+const deleteUserIdService = async (id) => {
+    return await prisma.user.delete({
+        where: { id: Number(id) }
+    });
+};
+
+module.exports = {
+    createTimeBlockService,
+    listReservationsService,
+    getUsersService,
+    getUserIdService,
+    updateUserService,
+    deleteUserIdService
+};

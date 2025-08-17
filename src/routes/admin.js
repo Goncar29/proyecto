@@ -11,6 +11,7 @@ router.get('/reservations', authenticateToken, listReservations);
 router.get('/users', authenticateToken, getUsers);
 router.get('/users/:id', authenticateToken, getUserId);
 router.put('/users/:id', authenticateToken, updateUserId);
+router.delete('/users/:id', authenticateToken, deleteUserId);
 
 router.get('/audit', authenticateToken, listAuditLogs);
 
