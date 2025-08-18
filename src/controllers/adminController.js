@@ -1,4 +1,11 @@
-const { createTimeBlockService, listReservationsService, getUsersService, getUserIdService, updateUserService, deleteUserIdService } = require('../services/adminService');
+const { createTimeBlockService,
+    listReservationsService,
+    getUsersService,
+    getUserIdService,
+    updateUserService,
+    deleteUserIdService,
+    toggleUserStatusService
+} = require('../services/adminService');
 
 const createTimeBlock = async (req, res) => {
     if (req.user.role !== 'ADMIN') {
@@ -111,4 +118,31 @@ const deleteUserId = async (req, res) => {
     }
 };
 
-module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId };
+const toggleUserStatus = async (req, res) => {
+    if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const userId = parseInt(req.params.id, 10);
+    const { isActive, isSuspended, suspensionReason } = req.body;
+
+    try {
+        // Llamamos al service
+        const updatedUser = await toggleUserStatusService(
+            userId,
+            isActive,
+            isSuspended,
+            suspensionReason
+        );
+
+        res.json({
+            message: 'User status updated successfully',
+            user: updatedUser
+        });
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        res.status(500).json({ error: error.message || 'Error toggling user status' });
+    }
+};
+
+module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus };

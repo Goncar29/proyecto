@@ -28,6 +28,8 @@ const getUsersService = async () => {
             email: true,
             name: true,
             role: true,
+            isActive: true,
+            isSuspended: true,
             createdAt: true,
             updatedAt: true
         }
@@ -78,11 +80,41 @@ const deleteUserIdService = async (id) => {
     });
 };
 
+const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReason) => {
+    const user = await prisma.user.findUnique({
+        where: { id: Number(id) }
+    });
+    if (!user) throw new Error('User not found');
+
+    // Construir objeto de actualización solo con campos válidos
+    const data = {};
+
+    // Activar/desactivar usuario
+    if (isActive !== undefined) {
+        data.isActive = isActive;
+    } else {
+        data.isActive = !user.isActive; // toggle automático si no se envía
+    }
+
+    // Suspender/activar suspensión
+    if (isSuspended !== undefined) {
+        data.isSuspended = isSuspended;
+        data.suspensionReason = isSuspended ? suspensionReason || null : null;
+    }
+
+    return await prisma.user.update({
+        where: { id: Number(id) },
+        data,
+        select: { id: true, email: true, isActive: true, isSuspended: true, suspensionReason: true }
+    });
+};
+
 module.exports = {
     createTimeBlockService,
     listReservationsService,
     getUsersService,
     getUserIdService,
     updateUserService,
-    deleteUserIdService
+    deleteUserIdService,
+    toggleUserStatusService
 };

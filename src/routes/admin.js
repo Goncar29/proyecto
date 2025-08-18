@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId } = require('../controllers/adminController');
+const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, } = require('../controllers/adminController');
 const authenticateToken = require('../middlewares/auth');
 const { listAuditLogs } = require('../controllers/auditController');
 
@@ -12,6 +12,7 @@ router.get('/users', authenticateToken, getUsers);
 router.get('/users/:id', authenticateToken, getUserId);
 router.put('/users/:id', authenticateToken, updateUserId);
 router.delete('/users/:id', authenticateToken, deleteUserId);
+router.patch('/users/:id/status', authenticateToken, toggleUserStatus);
 
 router.get('/audit', authenticateToken, listAuditLogs);
 
