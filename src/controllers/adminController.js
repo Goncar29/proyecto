@@ -1,4 +1,4 @@
-const { createTimeBlockService, listReservationsService, getUsersService, getUserIdService } = require('../services/adminService');
+const { createTimeBlockService, listReservationsService, getUsersService, getUserIdService, updateUserService, deleteUserIdService } = require('../services/adminService');
 
 const createTimeBlock = async (req, res) => {
     if (req.user.role !== 'ADMIN') {
@@ -104,7 +104,7 @@ const deleteUserId = async (req, res) => {
     }
     try {
         await deleteUserIdService(req.params.id);
-        res.status(204).json({ message: 'User deleted successfully' })
+        res.status(200).json({ message: 'User deleted successfully' })
     } catch (error) {
         console.error('Error deleting user:', error);
         res.status(500).json({ error: 'Error deleting user' });

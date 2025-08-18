@@ -45,9 +45,9 @@ model Appointment {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id])
-  patient   User      @relation("PatientAppointments", fields: [patientId], references: [id])
-  doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Restrict)
+  patient   User      @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
 
   @@unique([timeBlockId, patientId])
 }
@@ -61,7 +61,7 @@ model TimeBlock {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  doctor      User         @relation(fields: [doctorId], references: [id])
+  doctor      User         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
   appointment Appointment?
 
   @@unique([doctorId, startTime, endTime])
@@ -73,7 +73,7 @@ model AuditLog {
   action    String
   timestamp DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {

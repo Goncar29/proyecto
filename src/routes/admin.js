@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId } = require('../controllers/adminController');
+const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId } = require('../controllers/adminController');
 const authenticateToken = require('../middlewares/auth');
 const { listAuditLogs } = require('../controllers/auditController');
 
