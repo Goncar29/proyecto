@@ -1,7 +1,6 @@
 // require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
-const { PrismaClient } = require('@prisma/client'); // Import Prisma Client
-const prisma = new PrismaClient(); // Create an instance of Prisma Client
+const prisma = require('.src/utils/prismaClient');
 const bcrypt = require('bcryptjs'); // Import bcrypt for password hashing
 const jwt = require('jsonwebtoken'); // Import jsonwebtoken for token handling
 

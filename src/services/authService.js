@@ -1,7 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prismaClient');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const prisma = new PrismaClient();
 const { logAudit } = require('./audit');
 
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS) || 10;
