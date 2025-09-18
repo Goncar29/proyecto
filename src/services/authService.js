@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 const { logAudit } = require('./audit');
 
+const SALT_ROUNDS = Number(process.env.SALT_ROUNDS) || 10;
+
 const registerUser = async (email, password, name) => {
     if (!email || !password || !name) {
         throw new Error('Email, password y nombre son obligatorios.');
@@ -11,7 +13,7 @@ const registerUser = async (email, password, name) => {
     if (password.length < 8) {
         throw new Error('La contraseña debe tener al menos 8 caracteres.');
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     try {
         const newUser = await prisma.user.create({
             data: {
@@ -32,7 +34,6 @@ const registerUser = async (email, password, name) => {
 
 const loginUser = async (email, password) => {
     const user = await prisma.user.findUnique({ where: { email } });
-    console.log('User from DB:', user);
     const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
     if (!user || !isPasswordValid) {
         throw new Error('Usuario y/o contraseña incorrecta');
@@ -42,7 +43,7 @@ const loginUser = async (email, password) => {
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
     );
-    await logAudit(user.id, 'login')
+    await logAudit(user.id, 'login');
     return token;
 };
 

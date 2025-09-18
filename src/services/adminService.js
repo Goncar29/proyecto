@@ -1,28 +1,53 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const createTimeBlockService = async (startTime, endTime) => {
-    const newTimeBlock = await prisma.timeBlock.create({
+// Crear bloque de tiempo con validaciones y chequeo de solapamiento
+const createTimeBlockService = async (doctorId, startTime, endTime) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isNaN(start) || isNaN(end) || start >= end) {
+        throw new Error('Invalid startTime/endTime');
+    }
+
+    // comprobar solapamiento para el mismo doctor
+    const overlapping = await prisma.timeBlock.findFirst({
+        where: {
+            doctorId: Number(doctorId),
+            AND: [
+                { startTime: { lt: end } },
+                { endTime: { gt: start } }
+            ]
+        }
+    });
+    if (overlapping) {
+        throw new Error('Time block overlaps with an existing block for this doctor');
+    }
+
+    return await prisma.timeBlock.create({
         data: {
-            startTime: new Date(startTime),
-            endTime: new Date(endTime)
+            doctorId: Number(doctorId),
+            startTime: start,
+            endTime: end
         }
     });
-    return newTimeBlock;
 };
 
+// Listar reservas con relaciones completas
 const listReservationsService = async () => {
-    const reservations = await prisma.appointment.findMany({
+    return await prisma.appointment.findMany({
         include: {
-            user: true,
+            patient: true,
+            doctor: true,
             timeBlock: true
-        }
+        },
+        orderBy: { createdAt: 'desc' }
     });
-    return reservations;
 };
 
+// Listar usuarios activos (no eliminados)
 const getUsersService = async () => {
-    const users = await prisma.user.findMany({
+    return await prisma.user.findMany({
+        where: { deletedAt: null },
         select: {
             id: true,
             email: true,
@@ -32,11 +57,12 @@ const getUsersService = async () => {
             isSuspended: true,
             createdAt: true,
             updatedAt: true
-        }
+        },
+        orderBy: { createdAt: 'desc' }
     });
-    return users;
 };
 
+// Obtener usuario por ID (si no está eliminado)
 const getUserIdService = async (id) => {
     const user = await prisma.user.findUnique({
         where: { id: Number(id) },
@@ -47,13 +73,17 @@ const getUserIdService = async (id) => {
             role: true,
             isActive: true,
             isSuspended: true,
+            suspensionReason: true,
+            deletedAt: true,
             createdAt: true,
             updatedAt: true
         }
     });
+    if (!user || user.deletedAt) return null;
     return user;
 };
 
+// Actualizar usuario
 const updateUserService = async (id, data) => {
     return await prisma.user.update({
         where: { id: Number(id) },
@@ -71,32 +101,38 @@ const updateUserService = async (id, data) => {
             isSuspended: true,
             updatedAt: true
         }
-    })
-};
-
-const deleteUserIdService = async (id) => {
-    return await prisma.user.delete({
-        where: { id: Number(id) }
     });
 };
 
+// Borrado lógico de usuario
+const deleteUserIdService = async (id) => {
+    return await prisma.user.update({
+        where: { id: Number(id) },
+        data: { deletedAt: new Date() },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            deletedAt: true
+        }
+    });
+};
+
+// Activar/desactivar o suspender usuario
 const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReason) => {
     const user = await prisma.user.findUnique({
         where: { id: Number(id) }
     });
-    if (!user) throw new Error('User not found');
+    if (!user || user.deletedAt) throw new Error('User not found');
 
-    // Construir objeto de actualización solo con campos válidos
     const data = {};
 
-    // Activar/desactivar usuario
     if (isActive !== undefined) {
         data.isActive = isActive;
     } else {
-        data.isActive = !user.isActive; // toggle automático si no se envía
+        data.isActive = !user.isActive;
     }
 
-    // Suspender/activar suspensión
     if (isSuspended !== undefined) {
         data.isSuspended = isSuspended;
         data.suspensionReason = isSuspended ? suspensionReason || null : null;
@@ -105,7 +141,13 @@ const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReas
     return await prisma.user.update({
         where: { id: Number(id) },
         data,
-        select: { id: true, email: true, isActive: true, isSuspended: true, suspensionReason: true }
+        select: {
+            id: true,
+            email: true,
+            isActive: true,
+            isSuspended: true,
+            suspensionReason: true
+        }
     });
 };
 
