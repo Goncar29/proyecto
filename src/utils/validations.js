@@ -1,14 +1,19 @@
 function isValidEmail(email) {
     const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    return emailRegex.test(email);
+    return emailRegex.test(String(email).toLowerCase());
 }
 
 function isValidName(name) {
-    return typeof name === 'string' && name.length >= 3;
+    return typeof name === 'string' && name.trim().length >= 3;
 }
 
 function isUniqueNumericId(id, users) {
     return typeof id === 'number' && !users.some(user => user.id === id);
+}
+
+function validatePassword(password) {
+    // mínima longitud 8; puedes extender la validación si quieres complejidad
+    return typeof password === 'string' && password.length >= 8;
 }
 
 function validateUser(user, users) {
@@ -29,6 +34,9 @@ function validateUser(user, users) {
 }
 
 module.exports = {
+    validateEmail: isValidEmail,
+    validateName: isValidName,
+    validatePassword,
     isValidEmail,
     isValidName,
     isUniqueNumericId,
