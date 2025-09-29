@@ -3,6 +3,6 @@ const appointmentController = require('../controllers/appointmentController');
 const authenticateToken = require('../middlewares/auth');
 const router = Router();
 
-router.get('/:id/appointments', authenticateToken, appointmentController.getUserAppointments);
+router.get('/', authenticateToken, appointmentController.getUserAppointments);
 
 module.exports = router;
