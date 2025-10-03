@@ -12,12 +12,12 @@ Este proyecto es una API y aplicación web para la gestión de citas médicas, d
 - Base de datos PostgreSQL gestionada con Prisma ORM
 - Docker Compose para entorno de desarrollo
 
-## Instalación y uso
+## 🛠 Instalación y uso
 
 1. **Clona el repositorio y entra al directorio:**
    ```bash
-   git clone <repo-url>
-   cd curso-expressjs
+   git clone https://github.com/Goncar29/proyecto.git
+   cd proyecto
    ```
 2. **Copia el archivo de variables de entorno y configúralo:**
    ```bash
@@ -44,29 +44,77 @@ Este proyecto es una API y aplicación web para la gestión de citas médicas, d
    npm start
    ```
 
-La app estará disponible en [http://localhost:3005](http://localhost:3005)
-
 ## Endpoints principales
 
-- `POST /auth/register` — Registro de usuario
-- `POST /auth/login` — Login y obtención de token JWT
-- `GET /users/get` — Listar usuarios (ADMIN)
-- `PUT /users/update/:id` — Actualizar usuario (ADMIN)
-- `DELETE /users/delete/:id` — Eliminar usuario (ADMIN)
-- `POST /reservations` — Crear reserva (USER/ADMIN)
-- `GET /reservations/:id` — Obtener reserva (USER/ADMIN)
-- `PUT /reservations/:id` — Actualizar reserva (USER/ADMIN)
-- `DELETE /reservations/:id` — Eliminar reserva (ADMIN)
-- `POST /admin/time-blocks` — Crear bloque de tiempo (ADMIN)
-- `GET /admin/reservations` — Listar todas las reservas (ADMIN)
+🧑‍⚕️ Autenticación
+
+- `POST /api/auth/register` → Registro de un nuevo usuario.
+- `POST /api/auth/login` → Inicio de sesión y obtención de token JWT.
+
+🧑‍⚕️ Usuarios
+
+- `GET /api/users` → listado de usuarios (solo admin).
+- `GET /api/users/:id` → detalle de un usuario (admin o el propio usuario).
+- `PUT /api/users/:id` → actualizar datos de un usuario (admin o el propio usuario).
+- `DELETE /api/users/:id` → eliminar un usuario (solo admin).
+- `GET /api/users/:id/appointments` → listar citas de un usuario (según rol).
+- `GET /api/users/:id/reservations` → listar reservas de un usuario (según rol).
+
+🕒 Time Blocks
+
+- `POST /api/time-blocks` → Creación de un nuevo bloque de tiempo (requiere rol doctor o admin).
+- `GET /api/time-blocks` → Obtención de todos los bloques de tiempo (requiere rol doctor o admin).
+- `GET /api/time-blocks/:id` → Obtención de un bloque de tiempo específico.
+- `PUT /api/time-blocks/:id` → Actualización de un bloque de tiempo (requiere rol doctor o admin).
+- `DELETE /api/time-blocks/:id` → Eliminación de un bloque de tiempo (requiere rol doctor o admin).
+
+📅 Reservas
+
+-`POST /api/reservations` → Creación de una nueva reserva (requiere rol patient).
+-`GET /api/reservations` → Obtención de todas las reservas (requiere rol doctor o admin).
+-`GET /api/reservations/:id` → Obtención de una reserva específica.
+-`PUT /api/reservations/:id` → Actualización de una reserva (requiere rol doctor o admin).
+-`DELETE /api/reservations/:id` → Eliminación de una reserva (requiere rol doctor o admin).
+
+## 🔐 Autenticación y Roles
+
+El sistema implementa autenticación mediante JWT y roles de usuario:
+
+Roles disponibles:
+
+- admin: Acceso completo a todos los endpoints y recursos.
+- doctor: Crear/editar/eliminar sus propios time-blocks, ver reservas asignadas
+- patient: Crear reservas para bloques disponibles, ver sus propias reservas.
+
+Endpoints protegidos: Se requiere un token JWT válido en el encabezado Authorization para acceder a rutas protegidas.
 
 ## Tecnologías utilizadas
 
-- Node.js, Express.js
-- Prisma ORM
-- PostgreSQL
-- JWT
+- Node.js: Entorno de ejecución de JavaScript.
+- Express: Framework web para Node.js.
+- Prisma: ORM para interactuar con la base de datos.
+- PostgreSQL.
+- Joi: Biblioteca para validaciones de datos.
+- JWT (JSON Web Tokens): Autenticación y autorización de usuarios.
 - bcryptjs
+
+## ✅ Validaciones
+
+Se utilizan esquemas de validación con Joi para asegurar la integridad de los datos:
+
+createTimeBlockSchema: Validación para la creación de bloques de tiempo.
+
+updateTimeBlockSchema: Validación para la actualización de bloques de tiempo.
+
+createReservationSchema: Validación para la creación de reservas.
+
+updateReservationSchema: Validación para la actualización de reservas.
+
+## 🧪 Pruebas
+
+- Se recomienda usar Postman o Insomnia para probar todos los endpoints.
+- Recuerda enviar siempre el token JWT en Authorization: Bearer <token>.
+- Verificar permisos según el rol del usuario para cada endpoint.
 
 ## Notas
 
@@ -77,3 +125,4 @@ La app estará disponible en [http://localhost:3005](http://localhost:3005)
 ---
 
 **Licencia:** MIT
+
