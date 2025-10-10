@@ -1,21 +1,18 @@
 const express = require('express');
 const router = express.Router();
-
 const timeBlockController = require('../controllers/timeBlockController');
 const { createTimeBlockSchema, updateTimeBlockSchema } = require('../schemas/timeBlockSchemas');
 const validate = require('../middlewares/validate');
 const { authenticateToken, authorizeRole } = require('../middlewares/auth');
+const auditMiddleware = require('../middlewares/auditMiddleware');
 
-// Crear un time block
 router.post(
     '/',
     authenticateToken,
     authorizeRole(['doctor', 'admin']),
-    validate(createTimeBlockSchema, {
-        context: { role: (req) => req.user.role }, // pasamos rol al schema
-    }),
+    validate(createTimeBlockSchema, { context: { role: (req) => req.user.role } }),
+    auditMiddleware('Crear bloque de tiempo'),
     (req, res, next) => {
-        // Si es doctor, el doctorId se fuerza al suyo propio
         if (req.user.role === 'doctor') {
             req.body.doctorId = req.user.id;
         }
@@ -23,30 +20,28 @@ router.post(
     }
 );
 
-// Listar time blocks
 router.get(
     '/',
     authenticateToken,
     authorizeRole(['doctor', 'admin']),
+    auditMiddleware('Listar bloques de tiempo'),
     timeBlockController.getTimeBlocks
 );
 
-// Obtener un time block específico
 router.get(
     '/:id',
     authenticateToken,
     authorizeRole(['doctor', 'admin']),
+    auditMiddleware('Obtener bloque de tiempo'),
     timeBlockController.getTimeBlockById
 );
 
-// Actualizar un time block
 router.put(
     '/:id',
     authenticateToken,
     authorizeRole(['doctor', 'admin']),
-    validate(updateTimeBlockSchema, {
-        context: { role: (req) => req.user.role },
-    }),
+    validate(updateTimeBlockSchema, { context: { role: (req) => req.user.role } }),
+    auditMiddleware('Actualizar bloque de tiempo'),
     (req, res, next) => {
         if (req.user.role === 'doctor') {
             req.body.doctorId = req.user.id;
@@ -55,12 +50,13 @@ router.put(
     }
 );
 
-// Eliminar un time block
 router.delete(
     '/:id',
     authenticateToken,
     authorizeRole(['doctor', 'admin']),
+    auditMiddleware('Eliminar bloque de tiempo'),
     timeBlockController.deleteTimeBlock
 );
 
 module.exports = router;
+

@@ -1,19 +1,20 @@
 const { Router } = require('express');
-const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, } = require('../controllers/adminController');
+const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, toggleUserStatus } = require('../controllers/adminController');
+const { getAuditLogsController } = require('../controllers/auditController');
 const authenticateToken = require('../middlewares/auth');
-const { listAuditLogs } = require('../controllers/auditController');
+const auditMiddleware = require('../middlewares/auditMiddleware');
 
 const router = Router();
 
-router.post('/time-blocks', authenticateToken, createTimeBlock);
-router.get('/reservations', authenticateToken, listReservations);
+router.post('/time-blocks', authenticateToken, auditMiddleware('Admin crear bloque de tiempo'), createTimeBlock);
+router.get('/reservations', authenticateToken, auditMiddleware('Admin listar reservas'), listReservations);
 
-router.get('/users', authenticateToken, getUsers);
-router.get('/users/:id', authenticateToken, getUserId);
-router.put('/users/:id', authenticateToken, updateUserId);
-router.delete('/users/:id', authenticateToken, deleteUserId);
-router.patch('/users/:id/status', authenticateToken, toggleUserStatus);
+router.get('/users', authenticateToken, auditMiddleware('Admin listar usuarios'), getUsers);
+router.get('/users/:id', authenticateToken, auditMiddleware('Admin obtener usuario'), getUserId);
+router.put('/users/:id', authenticateToken, auditMiddleware('Admin actualizar usuario'), updateUserId);
+router.patch('/users/:id/status', authenticateToken, auditMiddleware('Admin cambiar estado usuario'), toggleUserStatus);
 
-router.get('/audit', authenticateToken, listAuditLogs);
+router.get('/audit', authenticateToken, auditMiddleware('Admin listar auditoría'), getAuditLogsController);
 
 module.exports = router;
+

@@ -1,4 +1,3 @@
-// audit.js
 const prisma = require('../utils/prismaClient');
 
 /**

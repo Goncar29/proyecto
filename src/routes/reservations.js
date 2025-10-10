@@ -3,6 +3,7 @@ const reservationController = require('../controllers/reservationController');
 const authenticateToken = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { createReservationSchema, updateReservationSchema } = require('../schemas/reservationSchema');
+const auditMiddleware = require('../middlewares/auditMiddleware');
 
 const router = Router();
 
@@ -10,26 +11,31 @@ router.post(
     '/',
     authenticateToken,
     validate(createReservationSchema),
+    auditMiddleware('Crear reserva'),
     reservationController.createReservation
 );
 
 router.get(
-    '/:id',
+    '/',
     authenticateToken,
+    auditMiddleware('Listar reservas'),
     reservationController.getReservations
 );
 
 router.put(
-    '/:id',
+    '/:reservationId',
     authenticateToken,
     validate(updateReservationSchema),
+    auditMiddleware('Actualizar reserva'),
     reservationController.updateReservation
 );
 
 router.delete(
-    '/:id',
+    '/:reservationId',
     authenticateToken,
+    auditMiddleware('Eliminar reserva'),
     reservationController.deleteReservation
 );
 
 module.exports = router;
+

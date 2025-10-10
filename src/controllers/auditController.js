@@ -1,6 +1,6 @@
 const { getAuditLogs } = require('../services/audit');
 
-const listAuditLogs = async (req, res) => {
+const getAuditLogsController = async (req, res) => {
     if (req.user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Access denied' });
     }
@@ -12,4 +12,4 @@ const listAuditLogs = async (req, res) => {
     }
 };
 
-module.exports = { listAuditLogs };
+module.exports = { getAuditLogsController };
