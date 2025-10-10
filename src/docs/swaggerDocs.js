@@ -1,10 +1,11 @@
+// src/docs/swaggerDoc.js  (reemplaza tu actual file por este)
 module.exports = {
     openapi: '3.0.0',
     info: {
         title: 'API de Reservas Médicas',
-        version: '1.0.0',
+        version: '1.1.0',
         description:
-            'Documentación de la API del sistema de gestión de citas médicas.\nIncluye endpoints de autenticación, usuarios, bloques de tiempo y reservas.',
+            'Documentación de la API para el sistema de gestión de citas médicas.\nIncluye autenticación, gestión de usuarios, bloques de tiempo, reservas y auditoría.',
     },
     servers: [
         {
@@ -37,6 +38,7 @@ module.exports = {
                     doctorId: { type: 'integer' },
                     startTime: { type: 'string', format: 'date-time' },
                     endTime: { type: 'string', format: 'date-time' },
+                    available: { type: 'boolean' },
                 },
             },
             Reservation: {
@@ -48,6 +50,18 @@ module.exports = {
                     timeBlockId: { type: 'integer' },
                     reason: { type: 'string' },
                     notes: { type: 'string' },
+                    status: { type: 'string', enum: ['pending', 'confirmed', 'cancelled'] },
+                },
+            },
+            Audit: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    userId: { type: 'integer' },
+                    action: { type: 'string' },
+                    targetTable: { type: 'string' },
+                    targetId: { type: 'integer' },
+                    timestamp: { type: 'string', format: 'date-time' },
                 },
             },
         },
@@ -109,7 +123,8 @@ module.exports = {
         },
 
         // =================== USERS ===================
-        '/users': {
+        // listado global administrado por admin (corrección solicitada)
+        '/admin/users': {
             get: {
                 tags: ['Users'],
                 summary: 'Obtener todos los usuarios (solo admin)',
@@ -120,13 +135,12 @@ module.exports = {
                 },
             },
         },
+
         '/users/{id}': {
             get: {
                 tags: ['Users'],
                 summary: 'Obtener usuario por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 responses: {
                     200: { description: 'Usuario obtenido correctamente' },
@@ -135,10 +149,8 @@ module.exports = {
             },
             put: {
                 tags: ['Users'],
-                summary: 'Actualizar usuario por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                summary: 'Actualizar usuario por ID (solo admin o usuario mismo)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 requestBody: {
                     content: {
@@ -148,8 +160,8 @@ module.exports = {
                                 properties: {
                                     name: { type: 'string' },
                                     email: { type: 'string' },
-                                    role: { type: 'string', enum: ['admin', 'doctor', 'patient'] },
                                     password: { type: 'string' },
+                                    role: { type: 'string', enum: ['admin', 'doctor', 'patient'] },
                                 },
                             },
                         },
@@ -163,10 +175,8 @@ module.exports = {
             },
             delete: {
                 tags: ['Users'],
-                summary: 'Eliminar usuario por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                summary: 'Eliminar usuario por ID (solo admin)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 responses: {
                     200: { description: 'Usuario eliminado correctamente' },
@@ -176,10 +186,33 @@ module.exports = {
         },
 
         // =================== TIMEBLOCKS ===================
-        '/admin/time-blocks': {
+        '/time-blocks': {
+            get: {
+                tags: ['TimeBlocks'],
+                summary: 'Obtener todos los bloques de tiempo (admin y doctores)',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Lista de bloques obtenida correctamente' },
+                },
+            },
+        },
+        '/time-blocks/{id}': {
+            delete: {
+                tags: ['TimeBlocks'],
+                summary: 'Eliminar bloque de tiempo (admin o doctor propietario)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Bloque eliminado correctamente' },
+                    403: { description: 'Acceso denegado' },
+                },
+            },
+        },
+        '/users/{doctorId}/time-blocks': {
             post: {
-                tags: ['TimeBlocks (Admin)'],
-                summary: 'Crear bloque de tiempo (solo admin)',
+                tags: ['TimeBlocks (Doctor)'],
+                summary: 'Crear bloque de tiempo (solo doctor)',
+                parameters: [{ name: 'doctorId', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 requestBody: {
                     content: {
@@ -194,30 +227,18 @@ module.exports = {
                 },
             },
         },
-        '/users/{doctorId}/time-blocks': {
-            post: {
-                tags: ['TimeBlocks (Doctor)'],
-                summary: 'Crear bloque de tiempo (solo doctor)',
-                parameters: [
-                    { name: 'doctorId', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
-                security: [{ bearerAuth: [] }],
-                requestBody: {
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/TimeBlock' },
-                        },
-                    },
-                },
-                responses: {
-                    201: { description: 'Bloque creado por doctor' },
-                    403: { description: 'Acceso denegado' },
-                },
-            },
-        },
 
         // =================== RESERVATIONS ===================
         '/reservations': {
+            get: {
+                tags: ['Reservations'],
+                summary: 'Obtener reservas (todas para admin, propias para doctor/paciente)',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Lista de reservas obtenida correctamente' },
+                    403: { description: 'Acceso denegado' },
+                },
+            },
             post: {
                 tags: ['Reservations'],
                 summary: 'Crear una reserva de cita médica',
@@ -235,36 +256,22 @@ module.exports = {
                     403: { description: 'Acceso denegado' },
                 },
             },
-            get: {
-                tags: ['Reservations'],
-                summary: 'Obtener todas las reservas (admin) o propias (paciente/doctor)',
-                security: [{ bearerAuth: [] }],
-                responses: {
-                    200: { description: 'Lista de reservas obtenida' },
-                    403: { description: 'Acceso denegado' },
-                },
-            },
         },
         '/reservations/{id}': {
             get: {
                 tags: ['Reservations'],
                 summary: 'Obtener reserva por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 responses: {
                     200: { description: 'Reserva obtenida correctamente' },
                     404: { description: 'Reserva no encontrada' },
-                    403: { description: 'Acceso denegado' },
                 },
             },
             put: {
                 tags: ['Reservations'],
-                summary: 'Actualizar reserva por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                summary: 'Actualizar reserva por ID (solo admin o paciente propietario)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 requestBody: {
                     content: {
@@ -281,14 +288,37 @@ module.exports = {
             },
             delete: {
                 tags: ['Reservations'],
-                summary: 'Eliminar reserva por ID',
-                parameters: [
-                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
-                ],
+                summary: 'Eliminar reserva (solo admin o paciente propietario)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
                 security: [{ bearerAuth: [] }],
                 responses: {
                     200: { description: 'Reserva eliminada correctamente' },
                     403: { description: 'Acceso denegado' },
+                },
+            },
+        },
+
+        // =================== AUDIT ===================
+        '/audits': {
+            get: {
+                tags: ['Audits'],
+                summary: 'Obtener todos los registros de auditoría (solo admin)',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Lista de auditorías obtenida correctamente' },
+                    403: { description: 'Acceso denegado' },
+                },
+            },
+        },
+        '/audits/{id}': {
+            get: {
+                tags: ['Audits'],
+                summary: 'Obtener registro de auditoría por ID (solo admin)',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Auditoría obtenida correctamente' },
+                    404: { description: 'Registro no encontrado' },
                 },
             },
         },
