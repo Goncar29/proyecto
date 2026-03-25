@@ -33,12 +33,18 @@ const registerUser = async (email, password, name) => {
 
 const loginUser = async (email, password) => {
     const user = await prisma.user.findUnique({ where: { email } });
-    const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
-    if (!user || !isPasswordValid) {
+    if (!user) throw new Error('Usuario y/o contraseña incorrecta');
+    if (user.deletedAt) throw new Error('Usuario y/o contraseña incorrecta');
+    if (!user.isActive) throw new Error('Usuario y/o contraseña incorrecta');
+    if (user.isSuspended) throw new Error('Usuario y/o contraseña incorrecta');
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
         throw new Error('Usuario y/o contraseña incorrecta');
     }
+
     const token = jwt.sign(
-        { id: user.id, role: user.role },
+        { id: user.id, role: user.role.toLowerCase() },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
     );

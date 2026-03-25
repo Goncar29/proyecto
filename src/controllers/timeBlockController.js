@@ -1,3 +1,5 @@
+const prisma = require('../utils/prismaClient');
+
 exports.createTimeBlock = async (req, res, next) => {
     try {
         const { doctorId, startTime, endTime } = req.body;

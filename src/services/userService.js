@@ -19,7 +19,6 @@ const updateUserService = async (id, data) => {
     const allowed = {};
     if (data.name !== undefined) allowed.name = data.name;
     if (data.email !== undefined) allowed.email = data.email;
-    if (data.role !== undefined) allowed.role = data.role;
     if (data.isActive !== undefined) allowed.isActive = data.isActive;
     if (data.isSuspended !== undefined) allowed.isSuspended = data.isSuspended;
     if (data.suspensionReason !== undefined) allowed.suspensionReason = data.suspensionReason;

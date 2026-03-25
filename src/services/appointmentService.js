@@ -3,7 +3,7 @@ const prisma = require('../utils/prismaClient');
 exports.getUserAppointments = async userId => {
     try {
         const appointments = await prisma.appointment.findMany({
-            where: { userId: parseInt(userId) },
+            where: { patientId: parseInt(userId) },
             include: { timeBlock: true }
         });
         return appointments;
