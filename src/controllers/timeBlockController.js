@@ -1,5 +1,29 @@
 const prisma = require('../utils/prismaClient');
 
+exports.getTimeBlocks = async (req, res, next) => {
+    try {
+        const { doctorId } = req.query;
+        const where = doctorId ? { doctorId: parseInt(doctorId) } : {};
+        const blocks = await prisma.timeBlock.findMany({ where });
+        res.json(blocks);
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.getTimeBlockById = async (req, res, next) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        const block = await prisma.timeBlock.findUnique({ where: { id } });
+        if (!block) {
+            return res.status(404).json({ error: 'TimeBlock not found' });
+        }
+        res.json(block);
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.createTimeBlock = async (req, res, next) => {
     try {
         const { doctorId, startTime, endTime } = req.body;
