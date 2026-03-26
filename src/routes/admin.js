@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, toggleUserStatus } = require('../controllers/adminController');
 const { getAuditLogsController } = require('../controllers/auditController');
-const authenticateToken = require('../middlewares/auth');
+const { authenticateToken } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
 
 const router = Router();

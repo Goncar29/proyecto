@@ -2,7 +2,7 @@ const { Router } = require('express');
 const { updateUser } = require('../controllers/userController');
 const reservationsRouter = require('./reservations');
 const appointmentsRouter = require('./appointments');
-const authenticateToken = require('../middlewares/auth');
+const { authenticateToken } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
 
 const router = Router();
