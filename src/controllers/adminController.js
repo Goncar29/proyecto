@@ -8,7 +8,7 @@ const { createTimeBlockService,
 } = require('../services/adminService');
 
 const createTimeBlock = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -39,7 +39,7 @@ const createTimeBlock = async (req, res) => {
 };
 
 const listReservations = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -52,7 +52,7 @@ const listReservations = async (req, res) => {
 };
 
 const getUsers = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
     try {
@@ -65,7 +65,7 @@ const getUsers = async (req, res) => {
 };
 
 const getUserId = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
     try {
@@ -93,7 +93,7 @@ const getUserId = async (req, res) => {
 };
 
 const updateUserId = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
     try {
@@ -106,7 +106,7 @@ const updateUserId = async (req, res) => {
 };
 
 const deleteUserId = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
     try {
@@ -119,7 +119,7 @@ const deleteUserId = async (req, res) => {
 };
 
 const toggleUserStatus = async (req, res) => {
-    if (req.user.role !== 'ADMIN') {
+    if (req.user.role?.toLowerCase() !== 'admin') {
         return res.status(403).json({ error: 'Access denied' });
     }
 
