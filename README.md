@@ -1,6 +1,6 @@
 # API para Citas Médicas
 
-Este proyecto es una API y aplicación web para la gestión de citas médicas, desarrollada con **Express.js**, **Prisma ORM**, **PostgreSQL** y **EJS** para vistas. Incluye autenticación JWT, control de roles (patient/doctor/admin), validaciones, y manejo de reservas y bloques de tiempo.
+Este proyecto es una API para la gestión de citas médicas, desarrollada con **Express.js**, **Prisma ORM** y **PostgreSQL**. Incluye autenticación JWT, control de roles (patient/doctor/admin), validaciones con Joi, y manejo de reservas y bloques de tiempo.
 
 ## Características principales
 
@@ -8,147 +8,207 @@ Este proyecto es una API y aplicación web para la gestión de citas médicas, d
 - Gestión de usuarios, reservas, citas y bloques de tiempo
 - Validación de datos con Joi
 - Autenticación y autorización con JWT
-- Vistas con EJS y estilos CSS
 - Base de datos PostgreSQL gestionada con Prisma ORM
-- Docker Compose para entorno de desarrollo
+- Índices de rendimiento en base de datos
+- Graceful shutdown para conexiones de base de datos
+- Auditoría de acciones sensibles
 
 ## 🛠 Instalación y uso
 
-1. **Clona el repositorio y entra al directorio:**
+1. **Clona el repositorio:**
    ```bash
    git clone https://github.com/Goncar29/proyecto.git
    cd proyecto
    ```
-2. **Copia el archivo de variables de entorno y configúralo:**
-   ```bash
-   cp .env.example .env
-   # Edita .env con tus valores
-   ```
-3. **Instala las dependencias:**
+2. **Instala las dependencias:**
    ```bash
    npm install
    ```
-4. **Aplica las migraciones y genera el cliente Prisma:**
+3. **Configura el entorno:**
+   ```bash
+   cp .env.example .env
+   # Edita .env con tus valores (DATABASE_URL, JWT_SECRET)
+   ```
+4. **Aplica las migraciones:**
    ```bash
    npx prisma migrate dev
    npx prisma generate
    ```
-5. **(Opcional) Ejecuta el seed para datos de ejemplo:**
-   ```bash
-   node prisma/seed.js
-   ```
-6. **Inicia la aplicación:**
+5. **Inicia la aplicación:**
    ```bash
    npm run dev
-   # o
-   npm start
    ```
 
-## Endpoints principales
+La API estará disponible en `http://localhost:3005`
+Swagger UI (documentación visual): `http://localhost:3005/api/docs`
 
-> ⚠️ Todos los endpoints protegidos requieren el header `Authorization: Bearer <token>`
+## 🔐 Autenticación
 
-### 🧑‍⚕️ Autenticación
+### Registro y Login
 
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register` | Registro de un nuevo usuario | No |
-| POST | `/api/auth/login` | Inicio de sesión y obtención de token JWT | No |
+```bash
+# Registrar usuario (rol por defecto: PATIENT)
+curl -X POST http://localhost:3005/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Juan Pérez", "email": "juan@email.com", "password": "password123"}'
 
-### 👥 Usuarios
+# Login
+curl -X POST http://localhost:3005/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "juan@email.com", "password": "password123"}'
+```
 
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/api/users` | Listado de usuarios | admin |
-| GET | `/api/users/:id` | Detalle de un usuario | admin, propio |
-| PUT | `/api/users/:id` | Actualizar datos de un usuario | admin, propio |
-| DELETE | `/api/users/:id` | Eliminar un usuario | admin |
-| GET | `/api/users/:id/appointments` | Listar citas de un usuario | admin, propio |
-| GET | `/api/users/:id/reservations` | Listar reservas de un usuario | admin, propio |
+**Response login:**
+```json
+{
+  "message": "Inicio de sesión exitoso",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
-### 🕒 Time Blocks (Bloques de tiempo)
+> ⚠️ Usar el token en todos los requests: `Authorization: Bearer <token>`
 
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/api/time-blocks` | Listar todos los bloques | patient, doctor, admin |
-| GET | `/api/time-blocks/:id` | Detalle de un bloque | patient, doctor, admin |
-| POST | `/api/time-blocks` | Crear un nuevo bloque | doctor, admin |
-| PUT | `/api/time-blocks/:id` | Actualizar un bloque | doctor, admin |
-| DELETE | `/api/time-blocks/:id` | Eliminar un bloque | doctor, admin |
-
-### 📅 Appointments (Citas)
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/api/appointments` | Listar todas las citas | patient, doctor, admin |
-| GET | `/api/appointments/:id` | Detalle de una cita | patient, doctor, admin |
-| POST | `/api/appointments` | Crear una nueva cita | patient, admin |
-| PUT | `/api/appointments/:id` | Actualizar/confirmar/cancelar cita | doctor, admin |
-| DELETE | `/api/appointments/:id` | Eliminar una cita | admin |
-
-### 📋 Reservas
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| POST | `/api/reservations` | Crear una nueva reserva | patient, admin |
-| GET | `/api/reservations` | Listar todas las reservas | doctor, admin |
-| GET | `/api/reservations/:id` | Detalle de una reserva | doctor, admin |
-| PUT | `/api/reservations/:id` | Actualizar una reserva | patient, doctor, admin |
-| DELETE | `/api/reservations/:id` | Eliminar una reserva | admin |
-
-## 🔐 Autenticación y Roles
-
-El sistema implementa autenticación mediante JWT y control de acceso basado en roles (RBAC).
-
-### Roles disponibles
+### Roles del Sistema
 
 | Rol | Descripción |
 |-----|-------------|
-| `admin` | Acceso completo a todos los endpoints y recursos |
-| `doctor` | Crear/editar/eliminar sus propios time-blocks, ver y gestionar reservas y citas |
-| `patient` | Crear reservas para bloques disponibles, ver sus propias citas |
+| `PATIENT` | Paciente. Puede ver time-blocks, crear reservas y ver sus citas |
+| `DOCTOR` | Doctor. Gestiona sus time-blocks, ve reservas de pacientes, gestiona citas |
+| `ADMIN` | Administrador. Acceso total al sistema |
 
-### Flujo de trabajo
+## 📋 Flujo de Trabajo
 
-1. **Registro/Login** → Obtener token JWT
-2. **Paciente**: Ve time-blocks disponibles → Crea reserva
-3. **Doctor**: Ve reservas de sus pacientes → Gestiona citas
-4. **Admin**: Acceso total al sistema
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     FLUJO DE NEGOCIO                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. ADMIN crea time-blocks (disponibilidad del doctor)         │
+│     → POST /api/admin/time-blocks                              │
+│                                                                 │
+│  2. PACIENTE ve time-blocks disponibles                        │
+│     → GET /api/time-blocks                                     │
+│                                                                 │
+│  3. PACIENTE crea RESERVA (crea automáticamente la CITA)       │
+│     → POST /api/users/:id/reservations                         │
+│                                                                 │
+│  4. DOCTOR ve reservas de sus pacientes                        │
+│     → GET /api/users/:doctorId/reservations                    │
+│                                                                 │
+│  5. DOCTOR confirma/cancela la CITA                            │
+│     → PUT /api/appointments/:id                                │
+│                                                                 │
+│  6. PACIENTE ve sus CITAS                                      │
+│     → GET /api/users/:id/appointments                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Endpoints
+
+> ⚠️ Todos los endpoints protegidos requieren: `Authorization: Bearer <token>`
+
+### 🧑‍⚕️ Autenticación — `/api/auth`
+
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| POST | `/auth/register` | Registro de usuario (rol: PATIENT) | No |
+| POST | `/auth/login` | Login, retorna JWT | No |
+
+### 👥 Usuarios — `/api/users`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| PUT | `/users/:id` | Actualizar usuario | admin, propio |
+| GET | `/:id/appointments` | Ver citas del usuario | admin, propio |
+| GET | `/:id/reservations` | Ver reservas del usuario | admin, propio |
+
+### 🕒 Time Blocks — `/api/time-blocks`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/time-blocks` | Listar bloques disponibles | patient, doctor, admin |
+| GET | `/time-blocks/:id` | Detalle de un bloque | patient, doctor, admin |
+| POST | `/time-blocks` | Crear bloque | doctor, admin |
+| PUT | `/time-blocks/:id` | Actualizar bloque | doctor, admin |
+| DELETE | `/time-blocks/:id` | Eliminar bloque | doctor, admin |
+
+### 📋 Reservas — `/api/users/:id/reservations`
+
+> Las reservas se crean dentro del contexto de un usuario: `/api/users/:id/reservations`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/` | Crear reserva (crea CITA automáticamente) | patient, admin |
+| GET | `/` | Ver reservas | doctor, admin |
+| PUT | `/:reservationId` | Actualizar reserva | patient, doctor, admin |
+| DELETE | `/:reservationId` | Eliminar reserva | admin |
+
+### 📅 Citas — `/api/appointments`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/` | Ver citas (filtradas por rol) | patient, doctor, admin |
+| GET | `/:id` | Detalle de cita | patient, doctor, admin |
+| PUT | `/:id` | Confirmar/cancelar cita | doctor, admin |
+| DELETE | `/:id` | Eliminar cita | admin |
+
+### ⚙️ Admin — `/api/admin`
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/time-blocks` | Crear time-block para doctor | admin |
+| GET | `/reservations` | Ver todas las reservas | admin |
+| GET | `/users` | Listar usuarios | admin |
+| GET | `/users/:id` | Detalle de usuario | admin |
+| PUT | `/users/:id` | Actualizar usuario | admin |
+| PATCH | `/users/:id/status` | Activar/desactivar usuario | admin |
+| GET | `/audit` | Ver logs de auditoría | admin |
+
+## Ejemplo Completo
+
+```bash
+# 1. Registrar paciente
+curl -X POST http://localhost:3005/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "María", "email": "maria@test.com", "password": "password123"}'
+
+# 2. Login para obtener token
+TOKEN=$(curl -s -X POST http://localhost:3005/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "maria@test.com", "password": "password123"}' | jq -r '.token')
+
+# 3. Ver time-blocks disponibles
+curl -X GET http://localhost:3005/api/time-blocks \
+  -H "Authorization: Bearer $TOKEN"
+
+# 4. Crear reserva
+curl -X POST http://localhost:3005/api/users/1/reservations \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"doctorId": 1, "patientId": 1, "timeBlockId": 1, "reason": "Consulta general"}'
+
+# 5. Ver citas del paciente
+curl -X GET http://localhost:3005/api/users/1/appointments \
+  -H "Authorization: Bearer $TOKEN"
+```
 
 ## Tecnologías utilizadas
 
-- **Node.js**: Entorno de ejecución de JavaScript
-- **Express**: Framework web para Node.js
-- **Prisma**: ORM para interactuar con la base de datos
-- **PostgreSQL**: Base de datos relacional
-- **Joi**: Biblioteca para validaciones de datos
-- **JWT**: Autenticación y autorización de usuarios
+- **Node.js** + **Express**: Runtime y framework web
+- **Prisma ORM**: ORM para PostgreSQL
+- **JWT**: Autenticación stateless
+- **Joi**: Validación de schemas
 - **bcryptjs**: Hashing de contraseñas
-- **EJS**: Motor de plantillas para vistas
-
-## ✅ Validaciones
-
-Se utilizan esquemas de validación con Joi para asegurar la integridad de los datos:
-
-- `createTimeBlockSchema`: Validación para la creación de bloques de tiempo
-- `updateTimeBlockSchema`: Validación para la actualización de bloques de tiempo
-- `createReservationSchema`: Validación para la creación de reservas
-- `updateReservationSchema`: Validación para la actualización de reservas
-- `createAppointmentSchema`: Validación para la creación de citas
-- `updateAppointmentSchema`: Validación para la actualización de citas
-
-## 🧪 Pruebas
-
-- Se recomienda usar Postman o Insomnia para probar todos los endpoints
-- Recuerda enviar siempre el token JWT en `Authorization: Bearer <token>`
-- Verificar permisos según el rol del usuario para cada endpoint
+- **swagger-ui-express**: Documentación de API
 
 ## Notas
 
-- El cliente Prisma se genera en `generated/prisma`
-- El archivo `.env` debe contener la variable `JWT_SECRET` y la cadena de conexión de la base de datos
-- Para desarrollo local, puedes usar los servicios de Docker Compose incluidos
-- El rol por defecto al registrar un nuevo usuario es `PATIENT`
+- El rol por defecto al registrar es `PATIENT`
+- Un time-block puede tener solo una cita asociada (relación 1:1)
+- Los usuarios usan soft-delete (campo `deletedAt`)
+- Las acciones sensibles se registran en `AuditLog`
+- Requiere `npx prisma migrate dev` después de cambios en schema
 
 ---
 
