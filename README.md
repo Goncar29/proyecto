@@ -1,11 +1,11 @@
 # API para Citas Médicas
 
-Este proyecto es una API y aplicación web para la gestión de citas médicas, desarrollada con **Express.js**, **Prisma ORM**, **PostgreSQL** y **EJS** para vistas. Incluye autenticación JWT, control de roles (usuario/admin), validaciones, y manejo de reservas y bloques de tiempo.
+Este proyecto es una API y aplicación web para la gestión de citas médicas, desarrollada con **Express.js**, **Prisma ORM**, **PostgreSQL** y **EJS** para vistas. Incluye autenticación JWT, control de roles (patient/doctor/admin), validaciones, y manejo de reservas y bloques de tiempo.
 
 ## Características principales
 
-- Registro y login de usuarios con roles (USER, ADMIN)
-- Gestión de usuarios, reservas y bloques de tiempo
+- Registro y login de usuarios con roles (PATIENT, DOCTOR, ADMIN)
+- Gestión de usuarios, reservas, citas y bloques de tiempo
 - Validación de datos con Joi
 - Autenticación y autorización con JWT
 - Vistas con EJS y estilos CSS
@@ -46,83 +46,110 @@ Este proyecto es una API y aplicación web para la gestión de citas médicas, d
 
 ## Endpoints principales
 
-🧑‍⚕️ Autenticación
+> ⚠️ Todos los endpoints protegidos requieren el header `Authorization: Bearer <token>`
 
-- `POST /api/auth/register` → Registro de un nuevo usuario.
-- `POST /api/auth/login` → Inicio de sesión y obtención de token JWT.
+### 🧑‍⚕️ Autenticación
 
-🧑‍⚕️ Usuarios
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/auth/register` | Registro de un nuevo usuario | No |
+| POST | `/api/auth/login` | Inicio de sesión y obtención de token JWT | No |
 
-- `GET /api/users` → listado de usuarios (solo admin).
-- `GET /api/users/:id` → detalle de un usuario (admin o el propio usuario).
-- `PUT /api/users/:id` → actualizar datos de un usuario (admin o el propio usuario).
-- `DELETE /api/users/:id` → eliminar un usuario (solo admin).
-- `GET /api/users/:id/appointments` → listar citas de un usuario (según rol).
-- `GET /api/users/:id/reservations` → listar reservas de un usuario (según rol).
+### 👥 Usuarios
 
-🕒 Time Blocks
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/users` | Listado de usuarios | admin |
+| GET | `/api/users/:id` | Detalle de un usuario | admin, propio |
+| PUT | `/api/users/:id` | Actualizar datos de un usuario | admin, propio |
+| DELETE | `/api/users/:id` | Eliminar un usuario | admin |
+| GET | `/api/users/:id/appointments` | Listar citas de un usuario | admin, propio |
+| GET | `/api/users/:id/reservations` | Listar reservas de un usuario | admin, propio |
 
-- `POST /api/time-blocks` → Creación de un nuevo bloque de tiempo (requiere rol doctor o admin).
-- `GET /api/time-blocks` → Obtención de todos los bloques de tiempo (requiere rol doctor o admin).
-- `GET /api/time-blocks/:id` → Obtención de un bloque de tiempo específico.
-- `PUT /api/time-blocks/:id` → Actualización de un bloque de tiempo (requiere rol doctor o admin).
-- `DELETE /api/time-blocks/:id` → Eliminación de un bloque de tiempo (requiere rol doctor o admin).
+### 🕒 Time Blocks (Bloques de tiempo)
 
-📅 Reservas
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/time-blocks` | Listar todos los bloques | patient, doctor, admin |
+| GET | `/api/time-blocks/:id` | Detalle de un bloque | patient, doctor, admin |
+| POST | `/api/time-blocks` | Crear un nuevo bloque | doctor, admin |
+| PUT | `/api/time-blocks/:id` | Actualizar un bloque | doctor, admin |
+| DELETE | `/api/time-blocks/:id` | Eliminar un bloque | doctor, admin |
 
--`POST /api/reservations` → Creación de una nueva reserva (requiere rol patient).
--`GET /api/reservations` → Obtención de todas las reservas (requiere rol doctor o admin).
--`GET /api/reservations/:id` → Obtención de una reserva específica.
--`PUT /api/reservations/:id` → Actualización de una reserva (requiere rol doctor o admin).
--`DELETE /api/reservations/:id` → Eliminación de una reserva (requiere rol doctor o admin).
+### 📅 Appointments (Citas)
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| GET | `/api/appointments` | Listar todas las citas | patient, doctor, admin |
+| GET | `/api/appointments/:id` | Detalle de una cita | patient, doctor, admin |
+| POST | `/api/appointments` | Crear una nueva cita | patient, admin |
+| PUT | `/api/appointments/:id` | Actualizar/confirmar/cancelar cita | doctor, admin |
+| DELETE | `/api/appointments/:id` | Eliminar una cita | admin |
+
+### 📋 Reservas
+
+| Método | Endpoint | Descripción | Roles |
+|--------|----------|-------------|-------|
+| POST | `/api/reservations` | Crear una nueva reserva | patient, admin |
+| GET | `/api/reservations` | Listar todas las reservas | doctor, admin |
+| GET | `/api/reservations/:id` | Detalle de una reserva | doctor, admin |
+| PUT | `/api/reservations/:id` | Actualizar una reserva | patient, doctor, admin |
+| DELETE | `/api/reservations/:id` | Eliminar una reserva | admin |
 
 ## 🔐 Autenticación y Roles
 
-El sistema implementa autenticación mediante JWT y roles de usuario:
+El sistema implementa autenticación mediante JWT y control de acceso basado en roles (RBAC).
 
-Roles disponibles:
+### Roles disponibles
 
-- admin: Acceso completo a todos los endpoints y recursos.
-- doctor: Crear/editar/eliminar sus propios time-blocks, ver reservas asignadas
-- patient: Crear reservas para bloques disponibles, ver sus propias reservas.
+| Rol | Descripción |
+|-----|-------------|
+| `admin` | Acceso completo a todos los endpoints y recursos |
+| `doctor` | Crear/editar/eliminar sus propios time-blocks, ver y gestionar reservas y citas |
+| `patient` | Crear reservas para bloques disponibles, ver sus propias citas |
 
-Endpoints protegidos: Se requiere un token JWT válido en el encabezado Authorization para acceder a rutas protegidas.
+### Flujo de trabajo
+
+1. **Registro/Login** → Obtener token JWT
+2. **Paciente**: Ve time-blocks disponibles → Crea reserva
+3. **Doctor**: Ve reservas de sus pacientes → Gestiona citas
+4. **Admin**: Acceso total al sistema
 
 ## Tecnologías utilizadas
 
-- Node.js: Entorno de ejecución de JavaScript.
-- Express: Framework web para Node.js.
-- Prisma: ORM para interactuar con la base de datos.
-- PostgreSQL.
-- Joi: Biblioteca para validaciones de datos.
-- JWT (JSON Web Tokens): Autenticación y autorización de usuarios.
-- bcryptjs
+- **Node.js**: Entorno de ejecución de JavaScript
+- **Express**: Framework web para Node.js
+- **Prisma**: ORM para interactuar con la base de datos
+- **PostgreSQL**: Base de datos relacional
+- **Joi**: Biblioteca para validaciones de datos
+- **JWT**: Autenticación y autorización de usuarios
+- **bcryptjs**: Hashing de contraseñas
+- **EJS**: Motor de plantillas para vistas
 
 ## ✅ Validaciones
 
 Se utilizan esquemas de validación con Joi para asegurar la integridad de los datos:
 
-createTimeBlockSchema: Validación para la creación de bloques de tiempo.
-
-updateTimeBlockSchema: Validación para la actualización de bloques de tiempo.
-
-createReservationSchema: Validación para la creación de reservas.
-
-updateReservationSchema: Validación para la actualización de reservas.
+- `createTimeBlockSchema`: Validación para la creación de bloques de tiempo
+- `updateTimeBlockSchema`: Validación para la actualización de bloques de tiempo
+- `createReservationSchema`: Validación para la creación de reservas
+- `updateReservationSchema`: Validación para la actualización de reservas
+- `createAppointmentSchema`: Validación para la creación de citas
+- `updateAppointmentSchema`: Validación para la actualización de citas
 
 ## 🧪 Pruebas
 
-- Se recomienda usar Postman o Insomnia para probar todos los endpoints.
-- Recuerda enviar siempre el token JWT en Authorization: Bearer <token>.
-- Verificar permisos según el rol del usuario para cada endpoint.
+- Se recomienda usar Postman o Insomnia para probar todos los endpoints
+- Recuerda enviar siempre el token JWT en `Authorization: Bearer <token>`
+- Verificar permisos según el rol del usuario para cada endpoint
 
 ## Notas
 
-- El cliente Prisma se genera en `generated/prisma`.
-- El archivo `.env` debe contener la variable `JWT_SECRET` y la cadena de conexión de la base de datos.
-- Para desarrollo local, puedes usar los servicios de Docker Compose incluidos.
+- El cliente Prisma se genera en `generated/prisma`
+- El archivo `.env` debe contener la variable `JWT_SECRET` y la cadena de conexión de la base de datos
+- Para desarrollo local, puedes usar los servicios de Docker Compose incluidos
+- El rol por defecto al registrar un nuevo usuario es `PATIENT`
 
 ---
 
 **Licencia:** MIT
-
