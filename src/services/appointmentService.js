@@ -12,20 +12,44 @@ exports.getUserAppointments = async userId => {
     }
 };
 
-exports.createAppointment = async (data, patientId) => {
+exports.createAppointment = async (data) => {
     try {
+        const timeBlock = await prisma.timeBlock.findUnique({
+            where: { id: data.timeBlockId }
+        });
+        
+        if (!timeBlock) {
+            throw new Error('TimeBlock no encontrado');
+        }
+        
+        const existingAppointment = await prisma.appointment.findUnique({
+            where: { timeBlockId: data.timeBlockId }
+        });
+        
+        if (existingAppointment) {
+            throw new Error('Ya existe una cita para este bloque de tiempo');
+        }
+        
         const appointment = await prisma.appointment.create({
             data: {
-                patientId,
-                timeBlockId: data.timeBlockId,
-                status: data.status || 'SCHEDULED',
-                notes: data.notes
+                date: new Date(),
+                status: data.status || 'PENDING',
+                notes: data.notes,
+                timeBlock: {
+                    connect: { id: data.timeBlockId }
+                },
+                patient: {
+                    connect: { id: data.patientId }
+                },
+                doctor: {
+                    connect: { id: timeBlock.doctorId }
+                }
             },
             include: { timeBlock: true }
         });
         return appointment;
     } catch (error) {
-        throw new Error('Error al crear la cita');
+        throw new Error(error.message);
     }
 };
 
