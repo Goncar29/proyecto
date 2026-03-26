@@ -14,10 +14,11 @@ function authenticateToken(req, res, next) {
     });
 }
 
-function authorizeRole(...roles) {
+function authorizeRole(roles) {
     return (req, res, next) => {
         const userRole = req.user?.role?.toLowerCase();
-        if (!userRole || !roles.includes(userRole)) {
+        const allowedRoles = Array.isArray(roles) ? roles : [roles];
+        if (!userRole || !allowedRoles.includes(userRole)) {
             return res.status(403).json({ error: 'Access denied: insufficient permissions' });
         }
         next();

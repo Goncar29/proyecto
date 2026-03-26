@@ -23,7 +23,7 @@ router.post(
 router.get(
     '/',
     authenticateToken,
-    authorizeRole(['doctor', 'admin']),
+    authorizeRole(['patient', 'doctor', 'admin']),
     auditMiddleware('Listar bloques de tiempo'),
     timeBlockController.getTimeBlocks
 );
@@ -31,7 +31,7 @@ router.get(
 router.get(
     '/:id',
     authenticateToken,
-    authorizeRole(['doctor', 'admin']),
+    authorizeRole(['patient', 'doctor', 'admin']),
     auditMiddleware('Obtener bloque de tiempo'),
     timeBlockController.getTimeBlockById
 );
