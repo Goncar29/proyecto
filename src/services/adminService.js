@@ -7,6 +7,9 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
     if (isNaN(start) || isNaN(end) || start >= end) {
         throw new Error('Invalid startTime/endTime');
     }
+    if (start <= new Date()) {
+        throw new Error('startTime must be in the future');
+    }
 
     return await prisma.$transaction(async (tx) => {
         const overlapping = await tx.timeBlock.findFirst({
