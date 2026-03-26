@@ -24,7 +24,7 @@ exports.getReservations = async (req, res) => {
             return res.status(404).json({ error: 'Reserva no encontrada' });
         }
 
-        res.json(reservation);
+        res.status(200).json(reservation);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -43,7 +43,7 @@ exports.updateReservation = async (req, res) => {
             notes
         });
 
-        res.json(updated);
+        res.status(200).json(updated);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

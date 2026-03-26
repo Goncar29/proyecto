@@ -8,26 +8,28 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
         throw new Error('Invalid startTime/endTime');
     }
 
-    // comprobar solapamiento para el mismo doctor
-    const overlapping = await prisma.timeBlock.findFirst({
-        where: {
-            doctorId: Number(doctorId),
-            AND: [
-                { startTime: { lt: end } },
-                { endTime: { gt: start } }
-            ]
+    return await prisma.$transaction(async (tx) => {
+        const overlapping = await tx.timeBlock.findFirst({
+            where: {
+                doctorId: Number(doctorId),
+                AND: [
+                    { startTime: { lt: end } },
+                    { endTime: { gt: start } }
+                ]
+            }
+        });
+        
+        if (overlapping) {
+            throw new Error('Time block overlaps with an existing block for this doctor');
         }
-    });
-    if (overlapping) {
-        throw new Error('Time block overlaps with an existing block for this doctor');
-    }
 
-    return await prisma.timeBlock.create({
-        data: {
-            doctorId: Number(doctorId),
-            startTime: start,
-            endTime: end
-        }
+        return await tx.timeBlock.create({
+            data: {
+                doctorId: Number(doctorId),
+                startTime: start,
+                endTime: end
+            }
+        });
     });
 };
 
@@ -119,34 +121,32 @@ const deleteUserIdService = async (id) => {
 
 // Activar/desactivar o suspender usuario
 const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReason) => {
-    const user = await prisma.user.findUnique({
-        where: { id: Number(id) }
-    });
-    if (!user || user.deletedAt) throw new Error('User not found');
+    return await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+            where: { id: Number(id) }
+        });
+        
+        if (!user || user.deletedAt) throw new Error('User not found');
 
-    const data = {};
-
-    if (isActive !== undefined) {
-        data.isActive = isActive;
-    } else {
-        data.isActive = !user.isActive;
-    }
-
-    if (isSuspended !== undefined) {
-        data.isSuspended = isSuspended;
-        data.suspensionReason = isSuspended ? suspensionReason || null : null;
-    }
-
-    return await prisma.user.update({
-        where: { id: Number(id) },
-        data,
-        select: {
-            id: true,
-            email: true,
-            isActive: true,
-            isSuspended: true,
-            suspensionReason: true
+        const data = {};
+        data.isActive = isActive !== undefined ? isActive : !user.isActive;
+        
+        if (isSuspended !== undefined) {
+            data.isSuspended = isSuspended;
+            data.suspensionReason = isSuspended ? suspensionReason || null : null;
         }
+
+        return await tx.user.update({
+            where: { id: Number(id) },
+            data,
+            select: {
+                id: true,
+                email: true,
+                isActive: true,
+                isSuspended: true,
+                suspensionReason: true
+            }
+        });
     });
 };
 

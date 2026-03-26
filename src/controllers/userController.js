@@ -42,7 +42,7 @@ const updateUser = async (req, res) => {
     try {
         // Asegurarse que el servicio hashée la contraseña si llega como texto
         const updated = await updateUserService(id, allowed);
-        return res.json(updated);
+        return res.status(200).json(updated);
     } catch (err) {
         // Manejo de errores esperados: conflicto de email, validaciones del servicio, etc.
         const status = err.status || (err.message && err.message.toLowerCase().includes('email') ? 409 : 400);

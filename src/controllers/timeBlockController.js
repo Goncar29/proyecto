@@ -5,7 +5,7 @@ exports.getTimeBlocks = async (req, res, next) => {
         const { doctorId } = req.query;
         const where = doctorId ? { doctorId: parseInt(doctorId) } : {};
         const blocks = await prisma.timeBlock.findMany({ where });
-        res.json(blocks);
+        res.status(200).json(blocks);
     } catch (error) {
         next(error);
     }
@@ -18,7 +18,7 @@ exports.getTimeBlockById = async (req, res, next) => {
         if (!block) {
             return res.status(404).json({ error: 'TimeBlock not found' });
         }
-        res.json(block);
+        res.status(200).json(block);
     } catch (error) {
         next(error);
     }
@@ -33,7 +33,7 @@ exports.createTimeBlock = async (req, res, next) => {
             data: { doctorId, startTime, endTime },
         });
 
-        res.json(block);
+        res.status(201).json(block);
     } catch (error) {
         next(error);
     }
@@ -60,7 +60,7 @@ exports.updateTimeBlock = async (req, res, next) => {
             data: { startTime, endTime },
         });
 
-        res.json(updated);
+        res.status(200).json(updated);
     } catch (error) {
         next(error);
     }
@@ -83,7 +83,7 @@ exports.deleteTimeBlock = async (req, res, next) => {
         }
 
         await prisma.timeBlock.delete({ where: { id } });
-        res.json({ message: 'TimeBlock deleted successfully' });
+        res.status(204).send();
     } catch (error) {
         next(error);
     }
