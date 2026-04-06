@@ -5,8 +5,14 @@ const setupSwagger = require('./config/swagger');
 
 const app = express();
 
+// Security headers
+app.use(require('helmet')());
+
 // Middleware global
 app.use(express.json());
+
+// Logger
+app.use(require('./middlewares/logger'));
 
 // Swagger UI
 setupSwagger(app);

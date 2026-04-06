@@ -1,7 +1,6 @@
 const prisma = require('../utils/prismaClient');
 const bcrypt = require('bcryptjs');
-
-const SALT_ROUNDS = Number(process.env.SALT_ROUNDS) || 10;
+const { SALT_ROUNDS } = require('../config');
 
 const publicSelect = {
     id: true,

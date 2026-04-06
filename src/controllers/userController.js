@@ -33,8 +33,7 @@ const updateUser = async (req, res) => {
         return res.status(400).json({ error: 'Invalid name' });
     }
     if (allowed.password !== undefined) {
-        if (!validatePassword || typeof allowed.password !== 'string' || allowed.password.length < 8) {
-            // Si existe validatePassword en utils lo usará; si no, aplica mínima longitud
+        if (!validatePassword(allowed.password)) {
             return res.status(400).json({ error: 'Password must be at least 8 characters' });
         }
     }

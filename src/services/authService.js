@@ -2,8 +2,7 @@ const prisma = require('../utils/prismaClient');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { logAudit } = require('./audit');
-
-const SALT_ROUNDS = Number(process.env.SALT_ROUNDS) || 10;
+const { SALT_ROUNDS, JWT_SECRET, JWT_EXPIRES_IN } = require('../config');
 
 const registerUser = async (email, password, name) => {
     if (!email || !password || !name) {
@@ -45,8 +44,8 @@ const loginUser = async (email, password) => {
 
     const token = jwt.sign(
         { id: user.id, role: user.role.toLowerCase() },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
     );
     await logAudit(user.id, 'login');
     return token;
