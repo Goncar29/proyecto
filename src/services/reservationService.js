@@ -42,8 +42,8 @@ exports.getReservation = async (id) => {
     return prisma.appointment.findUnique({
         where: { id: parseInt(id, 10) },
         include: {
-            patient: true,
-            doctor: true,
+            patient: { select: { id: true, name: true, email: true, role: true } },
+            doctor: { select: { id: true, name: true, email: true, role: true } },
             timeBlock: true
         }
     });

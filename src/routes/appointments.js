@@ -8,7 +8,7 @@ const router = Router();
 router.get(
     '/',
     authenticateToken,
-    authorizeRole('patient', 'doctor', 'admin'),
+    authorizeRole(['patient', 'doctor', 'admin']),
     auditMiddleware('Listar citas'),
     appointmentController.getUserAppointments
 );
@@ -16,7 +16,7 @@ router.get(
 router.post(
     '/',
     authenticateToken,
-    authorizeRole('patient', 'doctor', 'admin'),
+    authorizeRole(['patient', 'doctor', 'admin']),
     auditMiddleware('Crear cita'),
     appointmentController.createAppointment
 );
@@ -24,7 +24,7 @@ router.post(
 router.put(
     '/:id',
     authenticateToken,
-    authorizeRole('doctor', 'admin'),
+    authorizeRole(['doctor', 'admin']),
     auditMiddleware('Actualizar cita'),
     appointmentController.updateAppointment
 );
@@ -32,7 +32,7 @@ router.put(
 router.delete(
     '/:id',
     authenticateToken,
-    authorizeRole('admin'),
+    authorizeRole(['admin']),
     auditMiddleware('Eliminar cita'),
     appointmentController.deleteAppointment
 );

@@ -40,8 +40,8 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
 const listReservationsService = async () => {
     return await prisma.appointment.findMany({
         include: {
-            patient: true,
-            doctor: true,
+            patient: { select: { id: true, name: true, email: true, role: true } },
+            doctor: { select: { id: true, name: true, email: true, role: true } },
             timeBlock: true
         },
         orderBy: { createdAt: 'desc' }
@@ -89,6 +89,14 @@ const getUserIdService = async (id) => {
 
 // Actualizar usuario
 const updateUserService = async (id, data) => {
+    const VALID_ROLES = ['PATIENT', 'DOCTOR', 'ADMIN'];
+    if (data.role && !VALID_ROLES.includes(data.role.toUpperCase())) {
+        const error = new Error('Invalid role');
+        error.status = 400;
+        throw error;
+    }
+    if (data.role) data.role = data.role.toUpperCase();
+
     return await prisma.user.update({
         where: { id: Number(id) },
         data: {

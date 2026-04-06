@@ -8,10 +8,6 @@ const { createTimeBlockService,
 } = require('../services/adminService');
 
 const createTimeBlock = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { doctorId, startTime, endTime } = req.body;
 
     // Validaciones según el schema
@@ -39,10 +35,6 @@ const createTimeBlock = async (req, res) => {
 };
 
 const listReservations = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
-
     try {
         const reservations = await listReservationsService();
         res.json(reservations);
@@ -52,9 +44,6 @@ const listReservations = async (req, res) => {
 };
 
 const getUsers = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
     try {
         const users = await getUsersService();
         res.json(users);
@@ -65,9 +54,6 @@ const getUsers = async (req, res) => {
 };
 
 const getUserId = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
     try {
         const { id } = req.params;
         if (!id || isNaN(id)) {
@@ -93,9 +79,6 @@ const getUserId = async (req, res) => {
 };
 
 const updateUserId = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
     try {
         const updated = await updateUserService(req.params.id, req.body);
         res.status(200).json(updated);
@@ -106,9 +89,6 @@ const updateUserId = async (req, res) => {
 };
 
 const deleteUserId = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
     try {
         await deleteUserIdService(req.params.id);
         res.status(200).json({ message: 'User deleted successfully' })
@@ -119,10 +99,6 @@ const deleteUserId = async (req, res) => {
 };
 
 const toggleUserStatus = async (req, res) => {
-    if (req.user.role?.toLowerCase() !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
-
     const userId = parseInt(req.params.id, 10);
     const { isActive, isSuspended, suspensionReason } = req.body;
 

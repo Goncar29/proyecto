@@ -55,9 +55,14 @@ exports.createAppointment = async (data) => {
 
 exports.updateAppointment = async (id, data) => {
     try {
+        const allowed = {};
+        if (data.status !== undefined) allowed.status = data.status;
+        if (data.notes !== undefined) allowed.notes = data.notes;
+        if (data.reason !== undefined) allowed.reason = data.reason;
+
         const appointment = await prisma.appointment.update({
             where: { id: parseInt(id) },
-            data,
+            data: allowed,
             include: { timeBlock: true }
         });
         return appointment;

@@ -19,9 +19,6 @@ const updateUserService = async (id, data) => {
     const allowed = {};
     if (data.name !== undefined) allowed.name = data.name;
     if (data.email !== undefined) allowed.email = data.email;
-    if (data.isActive !== undefined) allowed.isActive = data.isActive;
-    if (data.isSuspended !== undefined) allowed.isSuspended = data.isSuspended;
-    if (data.suspensionReason !== undefined) allowed.suspensionReason = data.suspensionReason;
     if (data.password !== undefined) {
         if (data.password.length < 8) throw new Error('Password must be at least 8 characters');
         allowed.password = await bcrypt.hash(data.password, SALT_ROUNDS);

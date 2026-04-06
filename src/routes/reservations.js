@@ -10,7 +10,7 @@ const router = Router();
 router.post(
     '/',
     authenticateToken,
-    authorizeRole('patient'),
+    authorizeRole(['patient']),
     validate(createReservationSchema),
     auditMiddleware('Crear reserva'),
     reservationController.createReservation
@@ -19,7 +19,7 @@ router.post(
 router.get(
     '/',
     authenticateToken,
-    authorizeRole('patient', 'doctor', 'admin'),
+    authorizeRole(['patient', 'doctor', 'admin']),
     auditMiddleware('Listar reservas'),
     reservationController.getReservations
 );
@@ -27,7 +27,7 @@ router.get(
 router.put(
     '/:reservationId',
     authenticateToken,
-    authorizeRole('patient', 'doctor', 'admin'),
+    authorizeRole(['patient', 'doctor', 'admin']),
     validate(updateReservationSchema),
     auditMiddleware('Actualizar reserva'),
     reservationController.updateReservation
@@ -36,7 +36,7 @@ router.put(
 router.delete(
     '/:reservationId',
     authenticateToken,
-    authorizeRole('admin'),
+    authorizeRole(['admin']),
     auditMiddleware('Eliminar reserva'),
     reservationController.deleteReservation
 );
