@@ -186,7 +186,7 @@ curl -X GET http://localhost:3005/api/time-blocks \
 curl -X POST http://localhost:3005/api/users/1/reservations \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"doctorId": 1, "patientId": 1, "timeBlockId": 1, "reason": "Consulta general"}'
+  -d '{"doctorId": 1, "timeBlockId": 1, "reason": "Consulta general"}'
 
 # 5. Ver citas del paciente
 curl -X GET http://localhost:3005/api/users/1/appointments \
@@ -200,6 +200,7 @@ curl -X GET http://localhost:3005/api/users/1/appointments \
 - **JWT**: Autenticación stateless
 - **Joi**: Validación de schemas
 - **bcryptjs**: Hashing de contraseñas
+- **express-rate-limit**: Rate limiting en endpoints de autenticación
 - **swagger-ui-express**: Documentación de API
 
 ## Notas
@@ -209,6 +210,8 @@ curl -X GET http://localhost:3005/api/users/1/appointments \
 - Los usuarios usan soft-delete (campo `deletedAt`)
 - Las acciones sensibles se registran en `AuditLog`
 - Requiere `npx prisma migrate dev` después de cambios en schema
+- `patientId` en reservas se infiere del JWT — no debe enviarse en el body
+- Los endpoints `/auth/login` y `/auth/register` tienen rate limit: 20 requests / 15 minutos
 
 ---
 
