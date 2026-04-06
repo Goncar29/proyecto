@@ -18,14 +18,9 @@ exports.createReservation = async (req, res) => {
 
 exports.getReservations = async (req, res) => {
     try {
-        const { id } = req.params;
-        const reservation = await reservationService.getReservation(id);
-
-        if (!reservation) {
-            return res.status(404).json({ error: 'Reserva no encontrada' });
-        }
-
-        res.status(200).json(reservation);
+        const userId = req.user.id;
+        const reservations = await reservationService.getUserReservations(userId);
+        res.status(200).json(reservations);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

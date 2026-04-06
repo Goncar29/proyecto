@@ -80,7 +80,13 @@ const getUserId = async (req, res) => {
 
 const updateUserId = async (req, res) => {
     try {
-        const updated = await updateUserService(req.params.id, req.body);
+        const { name, email, password, role } = req.body;
+        const data = {};
+        if (name !== undefined) data.name = name;
+        if (email !== undefined) data.email = email;
+        if (password !== undefined) data.password = password;
+        if (role !== undefined) data.role = role;
+        const updated = await updateUserService(req.params.id, data);
         res.status(200).json(updated);
     } catch (error) {
         console.error('Error fetching users:', error);

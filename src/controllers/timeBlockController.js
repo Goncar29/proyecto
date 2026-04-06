@@ -2,8 +2,8 @@ const prisma = require('../utils/prismaClient');
 
 exports.getTimeBlocks = async (req, res, next) => {
     try {
-        const { doctorId } = req.query;
-        const where = doctorId ? { doctorId: parseInt(doctorId) } : {};
+        const doctorId = parseInt(req.query.doctorId, 10);
+        const where = !isNaN(doctorId) ? { doctorId } : {};
         const blocks = await prisma.timeBlock.findMany({ where });
         res.status(200).json(blocks);
     } catch (error) {

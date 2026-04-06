@@ -11,6 +11,13 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
         throw new Error('startTime must be in the future');
     }
 
+    const doctor = await prisma.user.findUnique({ where: { id: parseInt(doctorId) } });
+    if (!doctor || doctor.role !== 'DOCTOR') {
+        const error = new Error('El usuario no es un doctor válido');
+        error.status = 400;
+        throw error;
+    }
+
     return await prisma.$transaction(async (tx) => {
         const overlapping = await tx.timeBlock.findFirst({
             where: {

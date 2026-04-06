@@ -3,6 +3,8 @@ const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, to
 const { getAuditLogsController } = require('../controllers/auditController');
 const { authenticateToken, authorizeRole } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
+const validate = require('../middlewares/validate');
+const { auditQuerySchema } = require('../schemas/auditSchema');
 
 const router = Router();
 
@@ -16,7 +18,7 @@ router.get('/users/:id', auditMiddleware('Admin obtener usuario'), getUserId);
 router.put('/users/:id', auditMiddleware('Admin actualizar usuario'), updateUserId);
 router.patch('/users/:id/status', auditMiddleware('Admin cambiar estado usuario'), toggleUserStatus);
 
-router.get('/audit', auditMiddleware('Admin listar auditoría'), getAuditLogsController);
+router.get('/audit', validate(auditQuerySchema, { source: 'query' }), auditMiddleware('Admin listar auditoría'), getAuditLogsController);
 
 module.exports = router;
 

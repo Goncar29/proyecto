@@ -1,15 +1,21 @@
 const jwt = require('jsonwebtoken');
+const prisma = require('../utils/prismaClient');
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     const token = req.header('Authorization')?.split(' ')[1];
 
     if (!token)
         return res.status(401).json({ error: 'Access Denied, no token provided' });
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
-        req.user = user;
 
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+        if (!user || user.deletedAt || !user.isActive || user.isSuspended) {
+            return res.status(401).json({ error: 'Account inactive or suspended' });
+        }
+
+        req.user = decoded;
         next();
     });
 }

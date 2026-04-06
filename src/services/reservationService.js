@@ -89,3 +89,20 @@ exports.deleteReservation = async (id) => {
         where: { id: parseInt(id, 10) }
     });
 };
+
+// Obtener todas las reservas de un usuario (como paciente o doctor)
+exports.getUserReservations = async (userId) => {
+    return prisma.appointment.findMany({
+        where: {
+            OR: [
+                { patientId: userId },
+                { doctorId: userId }
+            ]
+        },
+        include: {
+            patient: { select: { id: true, name: true, email: true, role: true } },
+            doctor: { select: { id: true, name: true, email: true, role: true } },
+            timeBlock: true
+        }
+    });
+};
