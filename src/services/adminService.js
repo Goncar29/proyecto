@@ -33,11 +33,15 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
             throw new Error('Time block overlaps with an existing block for this doctor');
         }
 
+        const date = new Date(start);
+        date.setUTCHours(0, 0, 0, 0);
+
         return await tx.timeBlock.create({
             data: {
                 doctorId: Number(doctorId),
                 startTime: start,
-                endTime: end
+                endTime: end,
+                date,
             }
         });
     });

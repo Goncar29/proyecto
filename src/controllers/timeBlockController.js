@@ -29,8 +29,12 @@ exports.createTimeBlock = async (req, res, next) => {
         const { doctorId, startTime, endTime } = req.body;
 
         // Si es doctor, doctorId ya fue forzado en el router
+        const start = new Date(startTime);
+        const date = new Date(start);
+        date.setUTCHours(0, 0, 0, 0);
+
         const block = await prisma.timeBlock.create({
-            data: { doctorId, startTime, endTime },
+            data: { doctorId, startTime: start, endTime: new Date(endTime), date },
         });
 
         res.status(201).json(block);

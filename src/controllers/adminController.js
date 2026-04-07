@@ -30,7 +30,7 @@ const createTimeBlock = async (req, res) => {
         const newTimeBlock = await createTimeBlockService(doctorId, startTime, endTime);
         res.status(201).json(newTimeBlock);
     } catch (error) {
-        res.status(500).json({ error: 'Error creating time block' });
+        res.status(error.status || 500).json({ error: error.message || 'Error creating time block' });
     }
 };
 
