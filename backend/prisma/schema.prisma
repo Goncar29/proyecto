@@ -32,6 +32,11 @@ model User {
   // Relación con los logs de auditoría
   auditLogs AuditLog[]
 
+  // Relaciones nuevas (frontend-mediconnect P1)
+  doctorProfile DoctorProfile?
+  reviews       Review[]       @relation("PatientReviews")
+  reviewVotes   ReviewVote[]   @relation("UserReviewVotes")
+
   @@index([role])
   @@index([isActive])
   @@index([deletedAt])
@@ -75,6 +80,7 @@ model TimeBlock {
   @@unique([doctorId, startTime, endTime])
   @@index([doctorId])
   @@index([date])
+  @@index([doctorId, startTime])
 }
 
 model AuditLog {
@@ -88,6 +94,66 @@ model AuditLog {
   @@index([userId])
   @@index([timestamp])
   @@index([action])
+}
+
+model DoctorProfile {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specialty   String
+  specialties String[]
+  hospital    String?
+  location    String?
+  bio         String?
+  photoUrl    String?
+
+  avgRating   Float @default(0)
+  reviewCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews Review[]
+
+  @@index([specialty])
+  @@index([location])
+  @@index([avgRating])
+}
+
+model Review {
+  id              Int      @id @default(autoincrement())
+  doctorProfileId Int
+  patientId       Int
+  appointmentId   Int      @unique
+  rating          Int
+  text            String
+  helpfulCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patient       User          @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Restrict)
+  votes         ReviewVote[]
+
+  @@index([doctorProfileId])
+  @@index([patientId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    Int
+  value     Int
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserReviewVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId])
 }
 
 enum Role {
