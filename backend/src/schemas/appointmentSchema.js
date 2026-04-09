@@ -7,4 +7,18 @@ const createAppointmentSchema = Joi.object({
     notes: Joi.string().max(500).optional(),
 });
 
-module.exports = { createAppointmentSchema };
+/**
+ * Query filter schema for GET /api/users/:id/appointments.
+ * All fields optional. `from`/`to` bound the TimeBlock date window.
+ */
+const listAppointmentsQuerySchema = Joi.object({
+    status: Joi.string()
+        .valid('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')
+        .optional(),
+    from: Joi.date().iso().optional(),
+    to: Joi.date().iso().optional(),
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(50).default(12),
+});
+
+module.exports = { createAppointmentSchema, listAppointmentsQuerySchema };

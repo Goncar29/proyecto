@@ -1,15 +1,42 @@
 const prisma = require('../utils/prismaClient');
+const { parsePagination, buildPage } = require('./paginate');
 
-exports.getUserAppointments = async userId => {
-    try {
-        const appointments = await prisma.appointment.findMany({
-            where: { patientId: parseInt(userId) },
-            include: { timeBlock: true }
-        });
-        return appointments;
-    } catch (error) {
-        throw new Error('Error al obtener las citas del usuario');
+/**
+ * List appointments for a given user (as patient OR as doctor), with
+ * optional filters: status, from/to (TimeBlock.date window), pagination.
+ *
+ * The same endpoint serves both roles — a doctor hitting it sees their
+ * own agenda, a patient sees bookings. We OR over patientId/doctorId so
+ * whoever owns the user id gets the right set.
+ */
+exports.getUserAppointments = async (userId, query = {}) => {
+    const { page, pageSize, skip, take } = parsePagination({
+        page: query.page,
+        pageSize: query.pageSize,
+        defaultPageSize: 12,
+    });
+
+    const where = {
+        OR: [{ patientId: userId }, { doctorId: userId }],
+    };
+    if (query.status) where.status = query.status;
+    if (query.from || query.to) {
+        where.timeBlock = { date: {} };
+        if (query.from) where.timeBlock.date.gte = new Date(query.from);
+        if (query.to) where.timeBlock.date.lte = new Date(query.to);
     }
+
+    const [total, items] = await Promise.all([
+        prisma.appointment.count({ where }),
+        prisma.appointment.findMany({
+            where,
+            orderBy: { timeBlock: { startTime: 'desc' } },
+            skip,
+            take,
+            include: { timeBlock: true },
+        }),
+    ]);
+    return buildPage({ items, total, page, pageSize });
 };
 
 exports.createAppointment = async (data) => {

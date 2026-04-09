@@ -51,7 +51,38 @@ const loginUser = async (email, password) => {
     return token;
 };
 
+/**
+ * Fetch the authenticated user for GET /api/auth/me.
+ * Filters soft-deleted / suspended / inactive — if any of those slipped
+ * through the JWT (token issued before status change), we surface 401.
+ */
+const getCurrentUser = async (userId) => {
+    const user = await prisma.user.findFirst({
+        where: {
+            id: userId,
+            deletedAt: null,
+            isActive: true,
+            isSuspended: false,
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            createdAt: true,
+        },
+    });
+    if (!user) {
+        const err = new Error('Usuario no encontrado');
+        err.status = 401;
+        err.code = 'UNAUTHORIZED';
+        throw err;
+    }
+    return user;
+};
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    getCurrentUser,
 };

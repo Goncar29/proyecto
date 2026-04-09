@@ -1,12 +1,22 @@
 const appointmentService = require('../services/appointmentService');
 
-exports.getUserAppointments = async (req, res) => {
+exports.getUserAppointments = async (req, res, next) => {
     try {
-        const userId = req.user.id;
-        const appointments = await appointmentService.getUserAppointments(userId);
-        return res.status(200).json(appointments);
+        // When mounted under /api/users/:id/appointments, req.params.id is the
+        // target user. When mounted at /api/appointments, it's undefined and we
+        // default to the caller. Non-admins may only read their own.
+        const targetId = req.params.id ? parseInt(req.params.id, 10) : req.user.id;
+        const callerRole = req.user.role?.toLowerCase();
+        if (targetId !== req.user.id && callerRole !== 'admin') {
+            const err = new Error('Forbidden');
+            err.status = 403;
+            err.code = 'FORBIDDEN';
+            throw err;
+        }
+        const result = await appointmentService.getUserAppointments(targetId, req.query);
+        return res.status(200).json(result);
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener las citas del usuario' });
+        return next(error);
     }
 };
 
