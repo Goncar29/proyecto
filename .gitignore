@@ -145,4 +145,17 @@ dist
 about.md
 modelo.dbml
 AppoinmentsDoctor.png
-/generated/prisma
+
+# Prisma generated client
+backend/generated/
+backend/prisma/generated/
+
+# Monorepo workspaces
+backend/node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Claude Code local artifacts (SDD, learning notes, worktrees, etc.)
+.claude/
