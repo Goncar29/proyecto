@@ -2,20 +2,50 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
-import type { DoctorProfile, TimeBlock, Review } from '@/types';
 
-interface DoctorDetailResponse extends Omit<DoctorProfile, 'user'> {
-  user: { id: number; name: string; email: string; role: string };
-  reviews: Review[];
+interface DoctorDetail {
+  id: number;
+  name: string;
+  specialty: string;
+  specialties?: string[];
+  hospital?: string;
+  location?: string;
+  bio?: string;
+  photoUrl?: string;
+  avgRating: number;
+  reviewCount: number;
   ratingHistogram?: Record<string, number>;
 }
 
-export default function DoctorDetail() {
+interface Slot {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
+interface ReviewItem {
+  id: number;
+  rating: number;
+  text: string;
+  createdAt: string;
+  patient: { id: number; name: string };
+}
+
+interface PaginatedReviews {
+  items: ReviewItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export default function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [doctor, setDoctor] = useState<DoctorDetailResponse | null>(null);
-  const [slots, setSlots] = useState<TimeBlock[]>([]);
+  const [doctor, setDoctor] = useState<DoctorDetail | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<number | null>(null);
   const [reason, setReason] = useState('');
@@ -25,15 +55,17 @@ export default function DoctorDetail() {
   useEffect(() => {
     if (!id) return;
     Promise.all([
-      api.get<DoctorDetailResponse>(`/public/doctors/${id}`),
-      api.get<TimeBlock[]>(`/public/doctors/${id}/availability`, {
+      api.get<DoctorDetail>(`/public/doctors/${id}`),
+      api.get<Slot[]>(`/public/doctors/${id}/availability`, {
         from: new Date().toISOString().split('T')[0],
         to: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       }),
+      api.get<PaginatedReviews>(`/public/doctors/${id}/reviews`),
     ])
-      .then(([doc, avail]) => {
+      .then(([doc, avail, rev]) => {
         setDoctor(doc);
         setSlots(avail);
+        setReviews(rev.items);
       })
       .catch(() => setError('Doctor no encontrado'))
       .finally(() => setLoading(false));
@@ -70,7 +102,7 @@ export default function DoctorDetail() {
   return (
     <div>
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{doctor.user.name}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{doctor.name}</h1>
         <p className="text-blue-600 mt-1">{doctor.specialty}</p>
         {doctor.hospital && <p className="text-gray-600 text-sm">{doctor.hospital}</p>}
         {doctor.location && <p className="text-gray-500 text-sm">{doctor.location}</p>}
@@ -122,14 +154,17 @@ export default function DoctorDetail() {
         </div>
       )}
 
-      {doctor.reviews.length > 0 && (
+      {reviews.length > 0 && (
         <>
           <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">Reviews</h2>
           <div className="space-y-3">
-            {doctor.reviews.map(r => (
+            {reviews.map(r => (
               <div key={r.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
+                    <span className="text-sm font-medium text-gray-700">{r.patient.name}</span>
+                  </div>
                   <span className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
                 </div>
                 {r.text && <p className="text-gray-700">{r.text}</p>}

@@ -1,17 +1,33 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/api/client';
-import type { DoctorProfile, PaginatedResponse } from '@/types';
+interface DoctorListItem {
+  id: number;
+  name: string;
+  specialty: string;
+  hospital?: string;
+  location?: string;
+  photoUrl?: string;
+  avgRating: number;
+  reviewCount: number;
+}
+
+interface PaginatedDoctors {
+  items: DoctorListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
 
 export default function Doctors() {
-  const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
+  const [doctors, setDoctors] = useState<DoctorListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     const params: Record<string, string> = {};
     if (search) params.search = search;
-    api.get<PaginatedResponse<DoctorProfile>>('/public/doctors', params)
+    api.get<PaginatedDoctors>('/public/doctors', params)
       .then(res => setDoctors(res.items))
       .finally(() => setLoading(false));
   }, [search]);
@@ -35,11 +51,11 @@ export default function Doctors() {
           {doctors.map(d => (
             <Link
               key={d.id}
-              to={`/doctors/${d.userId}`}
+              to={`/doctors/${d.id}`}
               className="block bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
             >
               <h3 className="font-semibold text-gray-900 text-lg">
-                {d.user?.name ?? `Doctor #${d.userId}`}
+                {d.name}
               </h3>
               <p className="text-blue-600 text-sm mt-1">{d.specialty}</p>
               {d.location && <p className="text-gray-500 text-sm">{d.location}</p>}

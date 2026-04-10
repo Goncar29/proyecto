@@ -226,10 +226,14 @@ async function getDoctorAvailability(userId, query) {
     });
     if (!profile) throw doctorNotFound();
 
+    // Express 5 req.query is immutable — Joi can't write coerced Dates back.
+    const from = query.from ? new Date(query.from) : startOfToday();
+    const to = query.to ? new Date(query.to) : addDays(from, 30);
+
     const blocks = await prisma.timeBlock.findMany({
         where: {
             doctorId: profile.userId,
-            date: { gte: query.from, lte: query.to },
+            date: { gte: from, lte: to },
             OR: [
                 { appointment: null },
                 { appointment: { status: 'CANCELLED' } },
