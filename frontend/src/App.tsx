@@ -8,6 +8,7 @@ import Register from '@/pages/Register';
 import Doctors from '@/pages/Doctors';
 import Dashboard from '@/pages/Dashboard';
 import DoctorDetail from '@/pages/DoctorDetail';
+import Admin from '@/pages/Admin';
 
 export default function App() {
   return (
@@ -25,6 +26,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={['ADMIN']}>
+                  <Admin />
                 </ProtectedRoute>
               }
             />
