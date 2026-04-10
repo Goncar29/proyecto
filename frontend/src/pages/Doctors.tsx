@@ -6,33 +6,53 @@ import type { DoctorProfile, PaginatedResponse } from '@/types';
 export default function Doctors() {
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    api.get<PaginatedResponse<DoctorProfile>>('/public/doctors')
+    const params: Record<string, string> = {};
+    if (search) params.search = search;
+    api.get<PaginatedResponse<DoctorProfile>>('/public/doctors', params)
       .then(res => setDoctors(res.items))
       .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <p style={{ padding: '2rem' }}>Cargando doctores...</p>;
+  }, [search]);
 
   return (
-    <main style={{ padding: '2rem', maxWidth: 800, margin: '0 auto' }}>
-      <h1>Doctores</h1>
-      {doctors.length === 0 ? (
-        <p>No hay doctores disponibles.</p>
+    <div>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Doctores</h1>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o especialidad..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+      />
+      {loading ? (
+        <p className="text-gray-500">Cargando doctores...</p>
+      ) : doctors.length === 0 ? (
+        <p className="text-gray-500">No se encontraron doctores.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {doctors.map(d => (
-            <li key={d.id} style={{ border: '1px solid #ddd', borderRadius: 8, padding: '1rem' }}>
-              <Link to={`/doctors/${d.userId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h3>{d.user?.name ?? `Doctor #${d.userId}`}</h3>
-                <p>{d.specialty} — {d.location ?? 'Sin ubicación'}</p>
-                <p>Rating: {d.avgRating.toFixed(1)} ({d.reviewCount} reviews)</p>
-              </Link>
-            </li>
+            <Link
+              key={d.id}
+              to={`/doctors/${d.userId}`}
+              className="block bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+            >
+              <h3 className="font-semibold text-gray-900 text-lg">
+                {d.user?.name ?? `Doctor #${d.userId}`}
+              </h3>
+              <p className="text-blue-600 text-sm mt-1">{d.specialty}</p>
+              {d.location && <p className="text-gray-500 text-sm">{d.location}</p>}
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-yellow-500">{'★'.repeat(Math.round(d.avgRating))}</span>
+                <span className="text-sm text-gray-600">
+                  {d.avgRating.toFixed(1)} ({d.reviewCount})
+                </span>
+              </div>
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
-    </main>
+    </div>
   );
 }
