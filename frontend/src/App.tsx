@@ -7,6 +7,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Doctors from '@/pages/Doctors';
 import Dashboard from '@/pages/Dashboard';
+import DoctorDetail from '@/pages/DoctorDetail';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/doctors" element={<Doctors />} />
+            <Route path="/doctors/:id" element={<DoctorDetail />} />
             <Route
               path="/dashboard"
               element={
