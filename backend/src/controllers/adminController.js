@@ -4,7 +4,8 @@ const { createTimeBlockService,
     getUserIdService,
     updateUserService,
     deleteUserIdService,
-    toggleUserStatusService
+    toggleUserStatusService,
+    promoteToDoctorService,
 } = require('../services/adminService');
 
 const createTimeBlock = async (req, res) => {
@@ -127,4 +128,13 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus };
+const promoteToDoctor = async (req, res, next) => {
+    try {
+        const result = await promoteToDoctorService(req.params.id, req.body);
+        res.status(200).json(result);
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor };

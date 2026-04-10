@@ -172,6 +172,55 @@ const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReas
     });
 };
 
+// Promover PATIENT a DOCTOR atómicamente (role + DoctorProfile)
+const promoteToDoctorService = async (userId, { specialty, specialties, hospital, location, bio }) => {
+    const id = Number(userId);
+
+    return await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({ where: { id } });
+
+        if (!user || user.deletedAt) {
+            const e = new Error('User not found');
+            e.status = 404; e.code = 'NOT_FOUND';
+            throw e;
+        }
+        if (!user.isActive || user.isSuspended) {
+            const e = new Error('User account is inactive or suspended');
+            e.status = 409; e.code = 'INVALID_STATE';
+            throw e;
+        }
+        if (user.role === 'DOCTOR') {
+            const e = new Error('User is already a DOCTOR');
+            e.status = 409; e.code = 'ALREADY_DOCTOR';
+            throw e;
+        }
+        if (user.role !== 'PATIENT') {
+            const e = new Error('Only PATIENT users can be promoted to DOCTOR');
+            e.status = 409; e.code = 'INVALID_ROLE';
+            throw e;
+        }
+
+        const updatedUser = await tx.user.update({
+            where: { id },
+            data: { role: 'DOCTOR' },
+            select: { id: true, email: true, name: true, role: true },
+        });
+
+        const profile = await tx.doctorProfile.create({
+            data: {
+                userId: id,
+                specialty,
+                specialties: specialties || [specialty],
+                hospital: hospital || null,
+                location: location || null,
+                bio: bio || null,
+            },
+        });
+
+        return { user: updatedUser, doctorProfile: profile };
+    });
+};
+
 module.exports = {
     createTimeBlockService,
     listReservationsService,
@@ -179,5 +228,6 @@ module.exports = {
     getUserIdService,
     updateUserService,
     deleteUserIdService,
-    toggleUserStatusService
+    toggleUserStatusService,
+    promoteToDoctorService,
 };

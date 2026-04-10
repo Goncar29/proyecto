@@ -1,10 +1,11 @@
 const { Router } = require('express');
-const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus } = require('../controllers/adminController');
+const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor } = require('../controllers/adminController');
 const { getAuditLogsController } = require('../controllers/auditController');
 const { authenticateToken, authorizeRole } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
 const validate = require('../middlewares/validate');
 const { auditQuerySchema } = require('../schemas/auditSchema');
+const { promoteDoctorSchema } = require('../schemas/promoteDoctorSchema');
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.get('/users/:id', auditMiddleware('Admin obtener usuario'), getUserId);
 router.put('/users/:id', auditMiddleware('Admin actualizar usuario'), updateUserId);
 router.delete('/users/:id', auditMiddleware('Admin eliminar usuario'), deleteUserId);
 router.patch('/users/:id/status', auditMiddleware('Admin cambiar estado usuario'), toggleUserStatus);
+router.post('/users/:id/promote-to-doctor', validate(promoteDoctorSchema), auditMiddleware('Admin promover a doctor'), promoteToDoctor);
 
 router.get('/audit', validate(auditQuerySchema, { source: 'query' }), auditMiddleware('Admin listar auditoría'), getAuditLogsController);
 
