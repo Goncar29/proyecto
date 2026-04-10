@@ -33,6 +33,19 @@ exports.createAppointment = async (req, res) => {
     }
 };
 
+exports.cancelAppointment = async (req, res, next) => {
+    try {
+        const appt = await appointmentService.cancelAppointment(
+            req.params.id,
+            req.user,
+            req.body?.reason,
+        );
+        return res.status(200).json(appt);
+    } catch (error) {
+        return next(error);
+    }
+};
+
 exports.updateAppointment = async (req, res) => {
     try {
         const { id } = req.params;

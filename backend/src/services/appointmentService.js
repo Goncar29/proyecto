@@ -80,6 +80,52 @@ exports.createAppointment = async (data) => {
     }
 };
 
+/**
+ * Cancel an appointment.
+ *
+ * Rules (spec §2.2):
+ *  - Only the owning patient, the owning doctor, or an admin can cancel.
+ *  - Cannot cancel a COMPLETED or already CANCELLED appointment (409).
+ *  - Frees the slot implicitly: availability queries treat CANCELLED as free.
+ *
+ * Errors carry .status / .code so the global errorHandler maps them.
+ */
+exports.cancelAppointment = async (appointmentId, caller, reason) => {
+    const id = parseInt(appointmentId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const existing = await prisma.appointment.findUnique({ where: { id } });
+    if (!existing) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const role = caller.role?.toLowerCase();
+    const isOwner = existing.patientId === caller.id || existing.doctorId === caller.id;
+    if (!isOwner && role !== 'admin') {
+        const e = new Error('Forbidden');
+        e.status = 403; e.code = 'FORBIDDEN';
+        throw e;
+    }
+    if (existing.status === 'COMPLETED' || existing.status === 'CANCELLED') {
+        const e = new Error(`Cannot cancel an appointment in status ${existing.status}`);
+        e.status = 409; e.code = 'INVALID_STATE';
+        throw e;
+    }
+
+    return prisma.appointment.update({
+        where: { id },
+        data: {
+            status: 'CANCELLED',
+            ...(reason !== undefined ? { reason } : {}),
+        },
+        include: { timeBlock: true },
+    });
+};
+
 exports.updateAppointment = async (id, data) => {
     try {
         const allowed = {};

@@ -3,7 +3,11 @@ const appointmentController = require('../controllers/appointmentController');
 const { authenticateToken, authorizeRole } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
 const validate = require('../middlewares/validate');
-const { createAppointmentSchema, listAppointmentsQuerySchema } = require('../schemas/appointmentSchema');
+const {
+    createAppointmentSchema,
+    listAppointmentsQuerySchema,
+    cancelAppointmentSchema,
+} = require('../schemas/appointmentSchema');
 
 // mergeParams: inherit :id from parent /api/users/:id/appointments mount.
 const router = Router({ mergeParams: true });
@@ -24,6 +28,15 @@ router.post(
     validate(createAppointmentSchema),
     auditMiddleware('Crear cita'),
     appointmentController.createAppointment
+);
+
+router.patch(
+    '/:id/cancel',
+    authenticateToken,
+    authorizeRole(['patient', 'doctor', 'admin']),
+    validate(cancelAppointmentSchema),
+    auditMiddleware('Cancelar cita'),
+    appointmentController.cancelAppointment,
 );
 
 router.put(

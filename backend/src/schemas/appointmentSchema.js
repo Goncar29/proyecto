@@ -21,4 +21,12 @@ const listAppointmentsQuerySchema = Joi.object({
     pageSize: Joi.number().integer().min(1).max(50).default(12),
 });
 
-module.exports = { createAppointmentSchema, listAppointmentsQuerySchema };
+const cancelAppointmentSchema = Joi.object({
+    reason: Joi.string().max(500).optional(),
+});
+
+module.exports = {
+    createAppointmentSchema,
+    listAppointmentsQuerySchema,
+    cancelAppointmentSchema,
+};
