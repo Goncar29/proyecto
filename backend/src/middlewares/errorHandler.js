@@ -44,7 +44,7 @@ const errorHandler = (err, req, res, next) => {
     const status = err.status || 500;
 
     if (status >= 500) {
-        console.error('[ErrorHandler]', err);
+        require('../utils/logger').error({ err }, 'Unhandled server error');
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 

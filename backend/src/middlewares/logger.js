@@ -1,11 +1,23 @@
-const LoggerMiddleware = (req, res, next) => {
-    const timestamp = new Date().toISOString();
+const log = require('../utils/logger');
 
-    console.log(`[${timestamp}] ${req.method} ${req.originalUrl} - IP: ${req.ip}`);
+const LoggerMiddleware = (req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
-        console.log(`[${timestamp}] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Duration: ${duration}ms`);
+        const data = {
+            method: req.method,
+            url: req.originalUrl,
+            status: res.statusCode,
+            duration,
+            ip: req.ip,
+        };
+        if (res.statusCode >= 500) {
+            log.error(data, 'request error');
+        } else if (res.statusCode >= 400) {
+            log.warn(data, 'request warning');
+        } else {
+            log.info(data, 'request');
+        }
     });
     next();
 };

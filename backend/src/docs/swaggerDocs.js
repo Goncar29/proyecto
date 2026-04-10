@@ -7,7 +7,7 @@ module.exports = {
     },
     servers: [
         {
-            url: 'http://localhost:3005/api',
+            url: 'http://localhost:3006/api',
             description: 'Servidor local',
         },
     ],
@@ -77,6 +77,51 @@ module.exports = {
                     timestamp: { type: 'string', format: 'date-time' },
                 },
             },
+            DoctorProfile: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    userId: { type: 'integer' },
+                    specialty: { type: 'string' },
+                    specialties: { type: 'array', items: { type: 'string' } },
+                    hospital: { type: 'string' },
+                    location: { type: 'string' },
+                    bio: { type: 'string' },
+                    photoUrl: { type: 'string' },
+                    avgRating: { type: 'number', format: 'float' },
+                    reviewCount: { type: 'integer' },
+                },
+            },
+            Review: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    doctorProfileId: { type: 'integer' },
+                    patientId: { type: 'integer' },
+                    appointmentId: { type: 'integer' },
+                    rating: { type: 'integer', minimum: 1, maximum: 5 },
+                    text: { type: 'string' },
+                    helpfulCount: { type: 'integer' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                },
+            },
+            PaginatedResponse: {
+                type: 'object',
+                properties: {
+                    items: { type: 'array', items: {} },
+                    total: { type: 'integer' },
+                    page: { type: 'integer' },
+                    pageSize: { type: 'integer' },
+                },
+            },
+            Error: {
+                type: 'object',
+                properties: {
+                    error: { type: 'string' },
+                    code: { type: 'string' },
+                    details: { type: 'object' },
+                },
+            },
         },
     },
     security: [{ bearerAuth: [] }],
@@ -132,6 +177,24 @@ module.exports = {
                 responses: {
                     200: { description: 'Login exitoso, devuelve token JWT' },
                     401: { description: 'Credenciales inválidas' },
+                },
+            },
+        },
+        '/auth/me': {
+            get: {
+                tags: ['Auth'],
+                summary: 'Obtener usuario autenticado',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: {
+                        description: 'Datos del usuario autenticado',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/User' },
+                            },
+                        },
+                    },
+                    401: { description: 'No autorizado' },
                 },
             },
         },
@@ -249,9 +312,50 @@ module.exports = {
                 description: 'Patient ve sus citas, doctor ve citas con sus pacientes, admin ve todas',
                 parameters: [
                     { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                    { name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] }, description: 'Filtrar por estado de la cita' },
+                    { name: 'from', in: 'query', required: false, schema: { type: 'string', format: 'date' }, description: 'Fecha de inicio del rango' },
+                    { name: 'to', in: 'query', required: false, schema: { type: 'string', format: 'date' }, description: 'Fecha de fin del rango' },
+                    { name: 'page', in: 'query', required: false, schema: { type: 'integer', default: 1 }, description: 'Número de página' },
+                    { name: 'pageSize', in: 'query', required: false, schema: { type: 'integer', default: 12 }, description: 'Cantidad por página' },
                 ],
                 responses: {
-                    200: { description: 'Citas obtenidas' },
+                    200: {
+                        description: 'Citas obtenidas (paginadas)',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/PaginatedResponse' },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        '/users/{userId}/appointments/{id}/cancel': {
+            patch: {
+                tags: ['Appointments'],
+                summary: 'Cancelar cita',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { name: 'userId', in: 'path', required: true, schema: { type: 'integer' } },
+                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                ],
+                requestBody: {
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    reason: { type: 'string', maxLength: 500 },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Cita cancelada' },
+                    403: { description: 'Acceso denegado' },
+                    404: { description: 'No encontrado' },
+                    409: { description: 'Conflicto — la cita no se puede cancelar en su estado actual' },
                 },
             },
         },
@@ -298,6 +402,120 @@ module.exports = {
                 responses: {
                     204: { description: 'Cita eliminada' },
                     403: { description: 'Acceso denegado' },
+                },
+            },
+        },
+
+        // =================== DOCTORS ===================
+        '/doctors': {
+            get: {
+                tags: ['Doctors'],
+                summary: 'Listar doctores (público)',
+                security: [],
+                parameters: [
+                    { name: 'specialty', in: 'query', required: false, schema: { type: 'string' }, description: 'Filtrar por especialidad' },
+                    { name: 'location', in: 'query', required: false, schema: { type: 'string' }, description: 'Filtrar por ubicación' },
+                    { name: 'search', in: 'query', required: false, schema: { type: 'string' }, description: 'Búsqueda por nombre, especialidad o hospital' },
+                    { name: 'sortBy', in: 'query', required: false, schema: { type: 'string', enum: ['avgRating', 'reviewCount', 'name'] }, description: 'Campo de ordenamiento' },
+                    { name: 'order', in: 'query', required: false, schema: { type: 'string', enum: ['asc', 'desc'] }, description: 'Dirección de ordenamiento' },
+                    { name: 'page', in: 'query', required: false, schema: { type: 'integer', default: 1 }, description: 'Número de página' },
+                    { name: 'pageSize', in: 'query', required: false, schema: { type: 'integer', default: 12, maximum: 50 }, description: 'Cantidad por página (máx 50)' },
+                ],
+                responses: {
+                    200: {
+                        description: 'Lista paginada de doctores',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/PaginatedResponse' },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        '/doctors/{id}': {
+            get: {
+                tags: ['Doctors'],
+                summary: 'Detalle de doctor (público)',
+                security: [],
+                parameters: [
+                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                ],
+                responses: {
+                    200: {
+                        description: 'Perfil del doctor con usuario y reviews',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/DoctorProfile' },
+                            },
+                        },
+                    },
+                    404: { description: 'Doctor no encontrado' },
+                },
+            },
+        },
+        '/doctors/{id}/availability': {
+            get: {
+                tags: ['Doctors'],
+                summary: 'Disponibilidad de doctor (público)',
+                security: [],
+                parameters: [
+                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                    { name: 'from', in: 'query', required: false, schema: { type: 'string', format: 'date' }, description: 'Fecha de inicio del rango' },
+                    { name: 'to', in: 'query', required: false, schema: { type: 'string', format: 'date' }, description: 'Fecha de fin del rango' },
+                ],
+                responses: {
+                    200: {
+                        description: 'Bloques horarios disponibles',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'array',
+                                    items: { $ref: '#/components/schemas/TimeBlock' },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        '/doctors/{id}/reviews': {
+            post: {
+                tags: ['Reviews'],
+                summary: 'Crear review para doctor',
+                security: [{ bearerAuth: [] }],
+                description: 'Solo pacientes pueden crear reviews',
+                parameters: [
+                    { name: 'id', in: 'path', required: true, schema: { type: 'integer' } },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    appointmentId: { type: 'integer' },
+                                    rating: { type: 'integer', minimum: 1, maximum: 5 },
+                                    text: { type: 'string', maxLength: 2000 },
+                                },
+                                required: ['appointmentId', 'rating'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: {
+                        description: 'Review creada',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/Review' },
+                            },
+                        },
+                    },
+                    403: { description: 'Acceso denegado — solo pacientes' },
+                    404: { description: 'Doctor o cita no encontrados' },
+                    409: { description: 'Conflicto — ya existe una review para esta cita' },
                 },
             },
         },
@@ -464,6 +682,38 @@ module.exports = {
                 },
                 responses: {
                     200: { description: 'Estado actualizado' },
+                },
+            },
+        },
+        '/admin/users/{id}/promote-to-doctor': {
+            post: {
+                tags: ['Admin'],
+                summary: 'Promover paciente a doctor (solo admin)',
+                security: [{ bearerAuth: [] }],
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    specialty: { type: 'string' },
+                                    specialties: { type: 'array', items: { type: 'string' } },
+                                    hospital: { type: 'string' },
+                                    location: { type: 'string' },
+                                    bio: { type: 'string' },
+                                },
+                                required: ['specialty'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Paciente promovido a doctor' },
+                    400: { description: 'Error de validación' },
+                    404: { description: 'Usuario no encontrado' },
+                    409: { description: 'El usuario ya es doctor' },
                 },
             },
         },

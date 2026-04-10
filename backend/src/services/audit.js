@@ -6,7 +6,7 @@ const prisma = require('../utils/prismaClient');
  */
 const logAudit = async (userId, action) => {
     if (!userId || !action) {
-        console.warn('[AuditLog] userId o action inválidos, skip');
+        require('../utils/logger').warn('[AuditLog] userId o action inválidos, skip');
         return false;
     }
     try {
@@ -18,7 +18,7 @@ const logAudit = async (userId, action) => {
         });
         return true;
     } catch (error) {
-        console.error('[AuditLog] Error al registrar auditoría:', error);
+        require('../utils/logger').error({ err: error }, 'AuditLog write failed');
         return false;
     }
 };

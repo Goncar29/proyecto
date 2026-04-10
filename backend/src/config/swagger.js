@@ -3,7 +3,7 @@ const swaggerDocs = require('../docs/swaggerDocs');
 
 const setupSwagger = (app) => {
     app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-    console.log('✅ Swagger UI disponible en: http://localhost:3005/api/docs');
+    require('../utils/logger').info('Swagger UI available at /api/docs');
 };
 
 module.exports = setupSwagger;

@@ -12,6 +12,8 @@ process.on('SIGTERM', async () => {
     process.exit(0);
 });
 
+const log = require('./utils/logger');
+
 app.listen(PORT, () => {
-    console.log(`Servidor escuchando en el puerto http://localhost:${PORT}`);
+    log.info({ port: PORT }, 'Server listening');
 });

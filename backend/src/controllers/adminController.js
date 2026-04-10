@@ -49,7 +49,7 @@ const getUsers = async (req, res) => {
         const users = await getUsersService();
         res.json(users);
     } catch (error) {
-        console.error('Error fetching users:', error);
+        require('../utils/logger').error({ err: error }, 'Admin controller error');
         res.status(500).json({ error: 'Error fetching users' });
     }
 };
@@ -74,7 +74,7 @@ const getUserId = async (req, res) => {
         const { password, ...userSafe } = user;
         res.json(userSafe);
     } catch (error) {
-        console.error('Error fetching users:', error);
+        require('../utils/logger').error({ err: error }, 'Admin controller error');
         res.status(500).json({ error: 'Error fetching users' });
     }
 };
@@ -90,7 +90,7 @@ const updateUserId = async (req, res) => {
         const updated = await updateUserService(req.params.id, data);
         res.status(200).json(updated);
     } catch (error) {
-        console.error('Error fetching users:', error);
+        require('../utils/logger').error({ err: error }, 'Admin controller error');
         res.status(500).json({ error: 'Error fetching users' });
     }
 };
@@ -100,7 +100,7 @@ const deleteUserId = async (req, res) => {
         await deleteUserIdService(req.params.id);
         res.status(200).json({ message: 'User deleted successfully' })
     } catch (error) {
-        console.error('Error deleting user:', error);
+        require('../utils/logger').error({ err: error }, 'Admin controller error');
         res.status(500).json({ error: 'Error deleting user' });
     }
 };
@@ -123,7 +123,7 @@ const toggleUserStatus = async (req, res) => {
             user: updatedUser
         });
     } catch (error) {
-        console.error('Error toggling user status:', error);
+        require('../utils/logger').error({ err: error }, 'Admin controller error');
         res.status(500).json({ error: error.message || 'Error toggling user status' });
     }
 };

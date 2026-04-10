@@ -25,7 +25,7 @@ const registerUser = async (email, password, name) => {
         await logAudit(newUser.id, 'register');
         return newUser;
     } catch (error) {
-        console.error('Error al registrar el usuario:', error);
+        require('../utils/logger').error({ err: error }, 'User registration failed');
         throw new Error('Error con conexión a la base de datos');
     }
 };
