@@ -1,23 +1,44 @@
 /**
  * Global error handler.
  *
- * Error envelope (spec §1):
+ * Error envelope:
  *   { error: string, code?: string, details?: unknown }
  *
- * Services throw plain Errors with `.status` (HTTP code) and optionally
- * `.code` (machine tag) and `.details`. Joi errors are detected via `isJoi`
- * and mapped to 422 VALIDATION.
+ * Handles: Joi validation errors, Prisma known-request errors,
+ * and service-thrown errors with .status/.code/.details.
  */
+
+const PRISMA_ERROR_MAP = {
+    P2002: { status: 409, code: 'DUPLICATE',   msg: 'Resource already exists' },
+    P2025: { status: 404, code: 'NOT_FOUND',   msg: 'Resource not found' },
+    P2003: { status: 409, code: 'FK_VIOLATION', msg: 'Referenced resource does not exist' },
+};
+
 const errorHandler = (err, req, res, next) => {
+    // Joi validation
     if (err.isJoi) {
-        // Keep 400 to stay compatible with existing test suite and the
-        // `validate` middleware which also returns 400. New services may
-        // still throw errors carrying their own .status/.code/.details.
         return res.status(400).json({
             error: 'Validation failed',
             code: 'VALIDATION',
             details: err.details,
         });
+    }
+
+    // Prisma known-request errors (PrismaClientKnownRequestError)
+    if (err.code && PRISMA_ERROR_MAP[err.code] && err.meta) {
+        const mapped = PRISMA_ERROR_MAP[err.code];
+        return res.status(mapped.status).json({
+            error: mapped.msg,
+            code: mapped.code,
+        });
+    }
+
+    // Body parser errors (payload too large, malformed JSON)
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({ error: 'Payload too large', code: 'PAYLOAD_TOO_LARGE' });
+    }
+    if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'Malformed JSON', code: 'BAD_JSON' });
     }
 
     const status = err.status || 500;

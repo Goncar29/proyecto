@@ -1,6 +1,6 @@
+const { PORT } = require('./config/env');
 const app = require('./app');
 const prisma = require('./utils/prismaClient');
-const PORT = process.env.PORT || 3006;
 
 process.on('SIGINT', async () => {
     await prisma.$disconnect();
