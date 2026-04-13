@@ -24,14 +24,22 @@ export default function Doctors() {
   const [doctors, setDoctors] = useState<DoctorListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce: espera 300ms después del último keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
+    setLoading(true);
     const params: Record<string, string> = {};
-    if (search) params.search = search;
+    if (debouncedSearch) params.q = debouncedSearch;
     api.get<PaginatedDoctors>('/public/doctors', params)
       .then(res => setDoctors(res.items))
       .finally(() => setLoading(false));
-  }, [search]);
+  }, [debouncedSearch]);
 
   return (
     <div>

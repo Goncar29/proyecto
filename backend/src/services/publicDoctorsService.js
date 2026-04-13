@@ -70,7 +70,12 @@ async function listDoctors(query) {
     };
 
     if (query.q) {
-        where.user.name = { contains: query.q, mode: 'insensitive' };
+        where.AND = [{
+            OR: [
+                { user: { name: { contains: query.q, mode: 'insensitive' } } },
+                { specialty: { contains: query.q, mode: 'insensitive' } },
+            ],
+        }];
     }
     if (query.specialty) {
         where.specialty = query.specialty;
