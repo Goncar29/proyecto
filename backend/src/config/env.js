@@ -2,6 +2,9 @@
  * Environment validation — fail fast on missing required vars.
  * Import this at the top of server.js BEFORE anything else.
  */
+const path = require('path');
+// Look for .env in backend/ first, then fall back to repo root
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 require('dotenv').config();
 
 const required = ['DATABASE_URL', 'JWT_SECRET'];
