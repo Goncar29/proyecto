@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
+import { useToast } from '@/context/ToastContext';
+import TimeBlocksPanel from '@/components/admin/TimeBlocksPanel';
+import AuditLogsPanel from '@/components/admin/AuditLogsPanel';
 import type { User } from '@/types';
 
+type Tab = 'users' | 'timeblocks' | 'audit';
+
 export default function Admin() {
-  const [users, setUsers] = useState<(User & { isActive: boolean; isSuspended: boolean })[]>([]);
+  const { toast } = useToast();
+  const [tab, setTab] = useState<Tab>('users');
+  const [users, setUsers] = useState<(User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [promoting, setPromoting] = useState<number | null>(null);
   const [specialty, setSpecialty] = useState('');
   const [showPromote, setShowPromote] = useState<number | null>(null);
 
   useEffect(() => {
-    api.get<(User & { isActive: boolean; isSuspended: boolean })[]>('/admin/users')
+    api.get<(User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null })[]>('/admin/users')
       .then(setUsers)
       .finally(() => setLoading(false));
   }, []);
@@ -20,7 +27,7 @@ export default function Admin() {
       await api.patch(`/admin/users/${userId}/status`, { [field]: !current });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, [field]: !current } : u));
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error');
+      toast(err instanceof Error ? err.message : 'Error', 'error');
     }
   };
 
@@ -32,8 +39,9 @@ export default function Admin() {
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: 'DOCTOR' } : u));
       setShowPromote(null);
       setSpecialty('');
+      toast('Usuario promovido a doctor', 'success');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al promover');
+      toast(err instanceof Error ? err.message : 'Error al promover', 'error');
     } finally {
       setPromoting(null);
     }
@@ -45,71 +53,100 @@ export default function Admin() {
     ADMIN: 'bg-purple-100 text-purple-800',
   };
 
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'users', label: 'Usuarios' },
+    { key: 'timeblocks', label: 'Bloques de tiempo' },
+    { key: 'audit', label: 'Auditoría' },
+  ];
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Panel de administración</h1>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Usuarios</h2>
-      {loading ? (
-        <p className="text-gray-500">Cargando...</p>
-      ) : (
-        <div className="space-y-3">
-          {users.map(u => (
-            <div key={u.id} className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <p className="font-medium text-gray-900">{u.name} <span className="text-gray-500 text-sm">({u.email})</span></p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${roleColor[u.role] ?? ''}`}>{u.role}</span>
-                    {!u.isActive && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactivo</span>}
-                    {u.isSuspended && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Suspendido</span>}
+      <div className="flex gap-1 border-b border-gray-200 mb-6">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              tab === t.key
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'users' && (
+        <>
+          {loading ? (
+            <p className="text-gray-500">Cargando...</p>
+          ) : (
+            <div className="space-y-3">
+              {users.map(u => (
+                <div key={u.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <p className="font-medium text-gray-900">{u.name} <span className="text-gray-500 text-sm">({u.email})</span></p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${roleColor[u.role] ?? ''}`}>{u.role}</span>
+                        {u.doctorProfile?.specialty && <span className="text-sm text-blue-600">{u.doctorProfile.specialty}</span>}
+                        {!u.isActive && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactivo</span>}
+                        {u.isSuspended && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Suspendido</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleStatus(u.id, 'isActive', u.isActive)}
+                        className="text-xs border border-gray-300 px-3 py-1 rounded-lg hover:bg-gray-50"
+                      >
+                        {u.isActive ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button
+                        onClick={() => toggleStatus(u.id, 'isSuspended', u.isSuspended)}
+                        className="text-xs border border-gray-300 px-3 py-1 rounded-lg hover:bg-gray-50"
+                      >
+                        {u.isSuspended ? 'Desuspender' : 'Suspender'}
+                      </button>
+                      {u.role === 'PATIENT' && (
+                        <button
+                          onClick={() => setShowPromote(showPromote === u.id ? null : u.id)}
+                          className="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
+                        >
+                          Promover a Doctor
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleStatus(u.id, 'isActive', u.isActive)}
-                    className="text-xs border border-gray-300 px-3 py-1 rounded-lg hover:bg-gray-50"
-                  >
-                    {u.isActive ? 'Desactivar' : 'Activar'}
-                  </button>
-                  <button
-                    onClick={() => toggleStatus(u.id, 'isSuspended', u.isSuspended)}
-                    className="text-xs border border-gray-300 px-3 py-1 rounded-lg hover:bg-gray-50"
-                  >
-                    {u.isSuspended ? 'Desuspender' : 'Suspender'}
-                  </button>
-                  {u.role === 'PATIENT' && (
-                    <button
-                      onClick={() => setShowPromote(showPromote === u.id ? null : u.id)}
-                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
-                    >
-                      Promover a Doctor
-                    </button>
+                  {showPromote === u.id && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Especialidad"
+                        value={specialty}
+                        onChange={e => setSpecialty(e.target.value)}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <button
+                        onClick={() => handlePromote(u.id)}
+                        disabled={promoting === u.id}
+                        className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {promoting === u.id ? 'Promoviendo...' : 'Confirmar'}
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-              {showPromote === u.id && (
-                <div className="mt-3 flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Especialidad"
-                    value={specialty}
-                    onChange={e => setSpecialty(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm flex-1 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <button
-                    onClick={() => handlePromote(u.id)}
-                    disabled={promoting === u.id}
-                    className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {promoting === u.id ? 'Promoviendo...' : 'Confirmar'}
-                  </button>
-                </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
+
+      {tab === 'timeblocks' && <TimeBlocksPanel />}
+      {tab === 'audit' && <AuditLogsPanel />}
     </div>
   );
 }

@@ -1,0 +1,8 @@
+node_modules
+.git
+.claude
+*.md
+backend/tests
+backend/.env
+backend/.env.test
+frontend/node_modules

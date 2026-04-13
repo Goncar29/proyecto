@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { api } from '@/api/client';
+import { ListSkeleton } from '@/components/Skeleton';
 import ReviewForm from '@/components/ReviewForm';
 import type { Appointment, PaginatedResponse } from '@/types';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
@@ -24,8 +27,9 @@ export default function Dashboard() {
       setAppointments(prev =>
         prev.map(a => a.id === id ? { ...a, status: 'CANCELLED' as const } : a)
       );
+      toast('Cita cancelada', 'success');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error al cancelar');
+      toast(err instanceof Error ? err.message : 'Error al cancelar', 'error');
     }
   };
 
@@ -43,7 +47,7 @@ export default function Dashboard() {
 
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Mis citas</h2>
       {loading ? (
-        <p className="text-gray-500">Cargando...</p>
+        <ListSkeleton count={4} />
       ) : appointments.length === 0 ? (
         <p className="text-gray-500">No tenés citas registradas.</p>
       ) : (

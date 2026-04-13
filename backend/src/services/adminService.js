@@ -71,7 +71,8 @@ const getUsersService = async () => {
             isActive: true,
             isSuspended: true,
             createdAt: true,
-            updatedAt: true
+            updatedAt: true,
+            doctorProfile: { select: { specialty: true } },
         },
         orderBy: { createdAt: 'desc' }
     });

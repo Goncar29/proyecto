@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/api/client';
+import { CardSkeleton } from '@/components/Skeleton';
 interface DoctorListItem {
   id: number;
   name: string;
@@ -43,7 +44,9 @@ export default function Doctors() {
         className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
       />
       {loading ? (
-        <p className="text-gray-500">Cargando doctores...</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
       ) : doctors.length === 0 ? (
         <p className="text-gray-500">No se encontraron doctores.</p>
       ) : (

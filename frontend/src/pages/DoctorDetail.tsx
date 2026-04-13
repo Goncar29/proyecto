@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { DetailSkeleton } from '@/components/Skeleton';
 
 interface DoctorDetail {
   id: number;
@@ -43,6 +45,7 @@ export default function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [doctor, setDoctor] = useState<DoctorDetail | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
@@ -50,7 +53,6 @@ export default function DoctorDetailPage() {
   const [booking, setBooking] = useState<number | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -77,7 +79,6 @@ export default function DoctorDetailPage() {
       return;
     }
     setError('');
-    setSuccess('');
     setBooking(timeBlockId);
     try {
       await api.post(`/users/${user.id}/reservations`, {
@@ -86,17 +87,16 @@ export default function DoctorDetailPage() {
         timeBlockId,
         reason: reason || undefined,
       });
-      setSuccess('Turno reservado con éxito');
-      setSlots(prev => prev.filter(s => s.id !== timeBlockId));
-      setReason('');
+      toast('Turno reservado con éxito', 'success');
+      navigate('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al reservar');
+      toast(err instanceof Error ? err.message : 'Error al reservar', 'error');
     } finally {
       setBooking(null);
     }
   };
 
-  if (loading) return <p className="text-gray-500">Cargando...</p>;
+  if (loading) return <DetailSkeleton />;
   if (!doctor) return <p className="text-red-600">{error || 'Doctor no encontrado'}</p>;
 
   return (
@@ -115,7 +115,6 @@ export default function DoctorDetailPage() {
 
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Turnos disponibles</h2>
       {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>}
-      {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">{success}</div>}
 
       {user?.role === 'PATIENT' && (
         <input
