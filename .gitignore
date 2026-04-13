@@ -76,6 +76,22 @@ certs/
 .DS_Store
 .vscode/
 
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local env overrides (any format)
+*.local
+.env.*
+!.env.example
+
+# Local databases (SQLite, etc.)
+*.sqlite
+*.sqlite3
+*.db
+
 # Prisma generated client
 backend/generated/
 backend/prisma/generated/
