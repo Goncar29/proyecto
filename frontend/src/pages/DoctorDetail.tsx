@@ -4,6 +4,7 @@ import { api } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { DetailSkeleton } from '@/components/Skeleton';
+import AvailabilityCalendar from '@/components/AvailabilityCalendar';
 
 interface DoctorDetail {
   id: number;
@@ -126,32 +127,12 @@ export default function DoctorDetailPage() {
         />
       )}
 
-      {slots.length === 0 ? (
-        <p className="text-gray-500">No hay turnos disponibles en los próximos 30 días.</p>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {slots.map(slot => {
-            const date = new Date(slot.date).toLocaleDateString();
-            const start = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const end = new Date(slot.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return (
-              <div key={slot.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">{date}</p>
-                  <p className="text-sm text-gray-500">{start} – {end}</p>
-                </div>
-                <button
-                  onClick={() => handleBook(slot.id)}
-                  disabled={booking === slot.id || !user || user.role !== 'PATIENT'}
-                  className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {booking === slot.id ? 'Reservando...' : 'Reservar'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <AvailabilityCalendar
+        slots={slots}
+        booking={booking}
+        isPatient={!!user && user.role === 'PATIENT'}
+        onBook={handleBook}
+      />
 
       {reviews.length > 0 && (
         <>
