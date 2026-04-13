@@ -1,4 +1,7 @@
 // Jest global setup — loads environment variables before any test file is required.
 // Runs once per worker BEFORE the test framework is installed, so Prisma client
 // instantiation (triggered by module imports) sees DATABASE_URL.
+const path = require('path');
+// Try repo root first (.env at project root), then backend/ fallback
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 require('dotenv').config();
