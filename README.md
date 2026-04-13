@@ -13,6 +13,18 @@ Este proyecto es una API para la gestión de citas médicas, desarrollada con **
 - Graceful shutdown para conexiones de base de datos
 - Auditoría de acciones sensibles
 
+## Estructura del monorepo
+
+Este repo es un monorepo con npm workspaces:
+
+```
+/
+├── backend/        @mediconnect/backend — API Express + Prisma + PostgreSQL
+└── frontend/       @mediconnect/frontend — Vite + React + TypeScript (scaffold en P6)
+```
+
+La documentación de diseño y el plan de implementación (SDD) viven en `.claude/sdd/frontend-mediconnect/` (no commiteado).
+
 ## 🛠 Instalación y uso
 
 1. **Clona el repositorio:**
@@ -20,24 +32,34 @@ Este proyecto es una API para la gestión de citas médicas, desarrollada con **
    git clone https://github.com/Goncar29/proyecto.git
    cd proyecto
    ```
-2. **Instala las dependencias:**
+2. **Instala las dependencias (instala ambos workspaces):**
    ```bash
    npm install
    ```
-3. **Configura el entorno:**
+3. **Configura el entorno del backend:**
    ```bash
-   cp .env.example .env
-   # Edita .env con tus valores (DATABASE_URL, JWT_SECRET)
+   cp backend/.env.example backend/.env
+   # Edita backend/.env con tus valores (DATABASE_URL, JWT_SECRET)
    ```
 4. **Aplica las migraciones:**
    ```bash
-   npx prisma migrate dev
-   npx prisma generate
+   cd backend && npx prisma migrate dev && npx prisma generate
    ```
-5. **Inicia la aplicación:**
+5. **Inicia el backend (desde la raíz):**
    ```bash
-   npm run dev
+   npm run dev:backend           # http://localhost:3006
    ```
+6. **Frontend:** Se scaffoldea en la fase P6 (ver `.claude/sdd/frontend-mediconnect/tasks.md`).
+
+### Scripts de raíz
+
+| Script | Qué hace |
+|---|---|
+| `npm run dev:backend` | Levanta el backend en modo hot-reload |
+| `npm run dev:frontend` | Levanta el frontend (después de P6) |
+| `npm run start` | Arranca el backend en modo producción |
+| `npm run test` | Corre los tests del backend |
+| `npm run build` | Build del frontend (después de P6) |
 
 La API estará disponible en `http://localhost:3005`
 Swagger UI (documentación visual): `http://localhost:3005/api/docs`

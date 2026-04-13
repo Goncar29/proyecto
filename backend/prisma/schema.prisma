@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  name             String
+  email            String    @unique
+  password         String
+  role             Role
+  isActive         Boolean   @default(true)
+  isSuspended      Boolean   @default(false)
+  suspensionReason String?
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relación si es paciente
+  appointments Appointment[] @relation("PatientAppointments")
+
+  // Relación si es doctor
+  doctorAppointments Appointment[] @relation("DoctorAppointments")
+
+  // Relación con los bloques de tiempo que ofrece el doctor
+  timeBlocks TimeBlock[]
+
+  // Relación con los logs de auditoría
+  auditLogs AuditLog[]
+
+  // Relaciones nuevas (frontend-mediconnect P1)
+  doctorProfile DoctorProfile?
+  reviews       Review[]       @relation("PatientReviews")
+  reviewVotes   ReviewVote[]   @relation("UserReviewVotes")
+
+  @@index([role])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model Appointment {
+  id          Int               @id @default(autoincrement())
+  date        DateTime
+  timeBlockId Int               @unique
+  patientId   Int
+  doctorId    Int
+  status      AppointmentStatus @default(PENDING)
+  notes       String?
+  reason      String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Restrict)
+  patient   User      @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([date])
+  @@index([status])
+}
+
+model TimeBlock {
+  id        Int      @id @default(autoincrement())
+  doctorId  Int
+  startTime DateTime
+  endTime   DateTime
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctor      User         @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  appointment Appointment?
+
+  @@unique([doctorId, startTime, endTime])
+  @@index([doctorId])
+  @@index([date])
+  @@index([doctorId, startTime])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([action])
+}
+
+model DoctorProfile {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specialty   String
+  specialties String[]
+  hospital    String?
+  location    String?
+  bio         String?
+  photoUrl    String?
+
+  avgRating   Float @default(0)
+  reviewCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews Review[]
+
+  @@index([specialty])
+  @@index([location])
+  @@index([avgRating])
+}
+
+model Review {
+  id              Int      @id @default(autoincrement())
+  doctorProfileId Int
+  patientId       Int
+  appointmentId   Int      @unique
+  rating          Int
+  text            String
+  helpfulCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  patient       User          @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Restrict)
+  votes         ReviewVote[]
+
+  @@index([doctorProfileId])
+  @@index([patientId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    Int
+  value     Int
+  createdAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserReviewVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId])
+}
+
+enum Role {
+  ADMIN
+  PATIENT
+  DOCTOR
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
