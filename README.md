@@ -1,239 +1,150 @@
-# API para Citas Médicas
+# MediConnect — Plataforma de Turnos Médicos
 
-Este proyecto es una API para la gestión de citas médicas, desarrollada con **Express.js**, **Prisma ORM** y **PostgreSQL**. Incluye autenticación JWT, control de roles (patient/doctor/admin), validaciones con Joi, y manejo de reservas y bloques de tiempo.
+Aplicación full-stack para la gestión de turnos médicos. Permite a pacientes buscar doctores, reservar turnos desde un calendario interactivo y administrar sus citas. Incluye panel de administración y sistema de reviews.
 
-## Características principales
+## Stack
 
-- Registro y login de usuarios con roles (PATIENT, DOCTOR, ADMIN)
-- Gestión de usuarios, reservas, citas y bloques de tiempo
-- Validación de datos con Joi
-- Autenticación y autorización con JWT
-- Base de datos PostgreSQL gestionada con Prisma ORM
-- Índices de rendimiento en base de datos
-- Graceful shutdown para conexiones de base de datos
-- Auditoría de acciones sensibles
+| Capa | Tecnología |
+|------|------------|
+| Backend | Node.js + Express 5, Prisma ORM, PostgreSQL |
+| Frontend | Vite + React 18 + TypeScript, Tailwind CSS v4 |
+| Auth | JWT (roles: PATIENT, DOCTOR, ADMIN) |
+| Validación | Joi (backend), TypeScript (frontend) |
+| Deploy | Docker multi-stage + docker-compose |
 
 ## Estructura del monorepo
 
-Este repo es un monorepo con npm workspaces:
-
 ```
 /
-├── backend/        @mediconnect/backend — API Express + Prisma + PostgreSQL
-└── frontend/       @mediconnect/frontend — Vite + React + TypeScript (scaffold en P6)
+├── backend/        @mediconnect/backend — API REST + Prisma
+├── frontend/       @mediconnect/frontend — SPA React
+├── Dockerfile      Build multi-stage (frontend → backend sirve el dist)
+└── docker-compose.yml
 ```
 
-La documentación de diseño y el plan de implementación (SDD) viven en `.claude/sdd/frontend-mediconnect/` (no commiteado).
-
-## 🛠 Instalación y uso
-
-1. **Clona el repositorio:**
-   ```bash
-   git clone https://github.com/Goncar29/proyecto.git
-   cd proyecto
-   ```
-2. **Instala las dependencias (instala ambos workspaces):**
-   ```bash
-   npm install
-   ```
-3. **Configura el entorno del backend:**
-   ```bash
-   cp backend/.env.example backend/.env
-   # Edita backend/.env con tus valores (DATABASE_URL, JWT_SECRET)
-   ```
-4. **Aplica las migraciones:**
-   ```bash
-   cd backend && npx prisma migrate dev && npx prisma generate
-   ```
-5. **Inicia el backend (desde la raíz):**
-   ```bash
-   npm run dev:backend           # http://localhost:3006
-   ```
-6. **Frontend:** Se scaffoldea en la fase P6 (ver `.claude/sdd/frontend-mediconnect/tasks.md`).
-
-### Scripts de raíz
-
-| Script | Qué hace |
-|---|---|
-| `npm run dev:backend` | Levanta el backend en modo hot-reload |
-| `npm run dev:frontend` | Levanta el frontend (después de P6) |
-| `npm run start` | Arranca el backend en modo producción |
-| `npm run test` | Corre los tests del backend |
-| `npm run build` | Build del frontend (después de P6) |
-
-La API estará disponible en `http://localhost:3005`
-Swagger UI (documentación visual): `http://localhost:3005/api/docs`
-
-## 🔐 Autenticación
-
-### Registro y Login
+## Instalación local
 
 ```bash
-# Registrar usuario (rol por defecto: PATIENT)
-curl -X POST http://localhost:3005/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Juan Pérez", "email": "juan@email.com", "password": "password123"}'
+# 1. Clonar e instalar
+git clone https://github.com/Goncar29/proyecto.git
+cd proyecto
+npm install
 
-# Login
-curl -X POST http://localhost:3005/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "juan@email.com", "password": "password123"}'
+# 2. Variables de entorno (en la raíz)
+cp backend/.env.example .env
+# Editar .env: DATABASE_URL, JWT_SECRET, PORT (default 3006)
+
+# 3. Migraciones y seed
+cd backend
+npx prisma migrate dev
+npx prisma generate
+npx prisma db seed
+cd ..
+
+# 4. Levantar todo
+npm run dev:backend    # http://localhost:3006
+npm run dev:frontend   # http://localhost:5173 (proxy → backend)
 ```
 
-**Response login:**
-```json
-{
-  "message": "Inicio de sesión exitoso",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
+## Scripts
 
-> ⚠️ Usar el token en todos los requests: `Authorization: Bearer <token>`
+| Script | Descripción |
+|--------|-------------|
+| `npm run dev:backend` | Backend con hot-reload |
+| `npm run dev:frontend` | Frontend con HMR |
+| `npm run test` | Tests del backend (Jest + Supertest) |
+| `npm run build` | Build de producción del frontend |
 
-### Roles del Sistema
-
-| Rol | Descripción |
-|-----|-------------|
-| `PATIENT` | Paciente. Puede ver time-blocks, crear reservas y ver sus citas |
-| `DOCTOR` | Doctor. Gestiona sus time-blocks, ve reservas de pacientes, gestiona citas |
-| `ADMIN` | Administrador. Acceso total al sistema |
-
-## 📋 Flujo de Trabajo
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     FLUJO DE NEGOCIO                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1. ADMIN crea time-blocks (disponibilidad del doctor)         │
-│     → POST /api/admin/time-blocks                              │
-│                                                                 │
-│  2. PACIENTE ve time-blocks disponibles                        │
-│     → GET /api/time-blocks                                     │
-│                                                                 │
-│  3. PACIENTE crea RESERVA (crea automáticamente la CITA)       │
-│     → POST /api/users/:id/reservations                         │
-│                                                                 │
-│  4. DOCTOR ve reservas de sus pacientes                        │
-│     → GET /api/users/:doctorId/reservations                    │
-│                                                                 │
-│  5. DOCTOR confirma/cancela la CITA                            │
-│     → PUT /api/appointments/:id                                │
-│                                                                 │
-│  6. PACIENTE ve sus CITAS                                      │
-│     → GET /api/users/:id/appointments                          │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Endpoints
-
-> ⚠️ Todos los endpoints protegidos requieren: `Authorization: Bearer <token>`
-
-### 🧑‍⚕️ Autenticación — `/api/auth`
-
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| POST | `/auth/register` | Registro de usuario (rol: PATIENT) | No |
-| POST | `/auth/login` | Login, retorna JWT | No |
-
-### 👥 Usuarios — `/api/users`
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| PUT | `/users/:id` | Actualizar usuario | admin, propio |
-| GET | `/:id/appointments` | Ver citas del usuario | admin, propio |
-| GET | `/:id/reservations` | Ver reservas del usuario | admin, propio |
-
-### 🕒 Time Blocks — `/api/time-blocks`
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/time-blocks` | Listar bloques disponibles | patient, doctor, admin |
-| GET | `/time-blocks/:id` | Detalle de un bloque | patient, doctor, admin |
-| POST | `/time-blocks` | Crear bloque | doctor, admin |
-| PUT | `/time-blocks/:id` | Actualizar bloque | doctor, admin |
-| DELETE | `/time-blocks/:id` | Eliminar bloque | doctor, admin |
-
-### 📋 Reservas — `/api/users/:id/reservations`
-
-> Las reservas se crean dentro del contexto de un usuario: `/api/users/:id/reservations`
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| POST | `/` | Crear reserva (crea CITA automáticamente) | patient, admin |
-| GET | `/` | Ver reservas | doctor, admin |
-| PUT | `/:reservationId` | Actualizar reserva | patient, doctor, admin |
-| DELETE | `/:reservationId` | Eliminar reserva | admin |
-
-### 📅 Citas — `/api/appointments`
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| GET | `/` | Ver citas (filtradas por rol) | patient, doctor, admin |
-| GET | `/:id` | Detalle de cita | patient, doctor, admin |
-| PUT | `/:id` | Confirmar/cancelar cita | doctor, admin |
-| DELETE | `/:id` | Eliminar cita | admin |
-
-### ⚙️ Admin — `/api/admin`
-
-| Método | Endpoint | Descripción | Roles |
-|--------|----------|-------------|-------|
-| POST | `/time-blocks` | Crear time-block para doctor | admin |
-| GET | `/reservations` | Ver todas las reservas | admin |
-| GET | `/users` | Listar usuarios | admin |
-| GET | `/users/:id` | Detalle de usuario | admin |
-| PUT | `/users/:id` | Actualizar usuario | admin |
-| PATCH | `/users/:id/status` | Activar/desactivar usuario | admin |
-| GET | `/audit` | Ver logs de auditoría | admin |
-
-## Ejemplo Completo
+## Docker
 
 ```bash
-# 1. Registrar paciente
-curl -X POST http://localhost:3005/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "María", "email": "maria@test.com", "password": "password123"}'
-
-# 2. Login para obtener token
-TOKEN=$(curl -s -X POST http://localhost:3005/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "maria@test.com", "password": "password123"}' | jq -r '.token')
-
-# 3. Ver time-blocks disponibles
-curl -X GET http://localhost:3005/api/time-blocks \
-  -H "Authorization: Bearer $TOKEN"
-
-# 4. Crear reserva
-curl -X POST http://localhost:3005/api/users/1/reservations \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"doctorId": 1, "timeBlockId": 1, "reason": "Consulta general"}'
-
-# 5. Ver citas del paciente
-curl -X GET http://localhost:3005/api/users/1/appointments \
-  -H "Authorization: Bearer $TOKEN"
+docker-compose up --build
+# App en http://localhost:3006
+# PostgreSQL en localhost:5432
 ```
 
-## Tecnologías utilizadas
+## Funcionalidades
 
-- **Node.js** + **Express**: Runtime y framework web
-- **Prisma ORM**: ORM para PostgreSQL
-- **JWT**: Autenticación stateless
-- **Joi**: Validación de schemas
-- **bcryptjs**: Hashing de contraseñas
-- **express-rate-limit**: Rate limiting en endpoints de autenticación
-- **swagger-ui-express**: Documentación de API
+### Para pacientes
+- Registro y login
+- Búsqueda de doctores en tiempo real (por nombre o especialidad, debounce 300ms)
+- Calendario interactivo de disponibilidad por mes
+- Reserva de turnos con motivo opcional
+- Dashboard con citas activas y posibilidad de cancelar
+- Sistema de reviews con rating (1–5 estrellas)
 
-## Notas
+### Para doctores
+- Ver turnos reservados
+- Confirmar o cancelar citas
 
-- El rol por defecto al registrar es `PATIENT`
-- Un time-block puede tener solo una cita asociada (relación 1:1)
-- Los usuarios usan soft-delete (campo `deletedAt`)
-- Las acciones sensibles se registran en `AuditLog`
-- Requiere `npx prisma migrate dev` después de cambios en schema
-- `patientId` en reservas se infiere del JWT — no debe enviarse en el body
-- Los endpoints `/auth/login` y `/auth/register` tienen rate limit: 20 requests / 15 minutos
+### Para administradores
+- Panel con tabs: Usuarios / Bloques de tiempo / Auditoría
+- Crear y eliminar bloques de disponibilidad por doctor
+- Ver y gestionar usuarios (activar/suspender/eliminar)
+- Log de auditoría paginado y filtrable
+
+## API
+
+> Base URL: `http://localhost:3006/api`  
+> Swagger UI: `http://localhost:3006/api/docs`  
+> Endpoints protegidos requieren: `Authorization: Bearer <token>`
+
+### Auth — `/api/auth`
+
+| Método | Endpoint | Auth |
+|--------|----------|------|
+| POST | `/auth/register` | No |
+| POST | `/auth/login` | No |
+| GET | `/auth/me` | JWT |
+
+### Doctores públicos — `/api/public/doctors`
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/` | Listado con filtros (`q`, `specialty`, `location`, `availability`) |
+| GET | `/:id` | Detalle del doctor |
+| GET | `/:id/availability` | Turnos disponibles (`from`, `to`) |
+| GET | `/:id/reviews` | Reviews paginadas |
+
+### Usuarios — `/api/users`
+
+| Método | Endpoint | Roles |
+|--------|----------|-------|
+| GET | `/:id/appointments` | propio, admin |
+| POST | `/:id/reservations` | patient |
+| PATCH | `/appointments/:id/cancel` | propio |
+| POST | `/appointments/:id/reviews` | patient |
+
+### Admin — `/api/admin`
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/users` | Listar usuarios |
+| PATCH | `/users/:id/status` | Activar/suspender |
+| DELETE | `/users/:id` | Soft-delete |
+| GET | `/time-blocks` | Listar bloques |
+| POST | `/time-blocks` | Crear bloque |
+| DELETE | `/time-blocks/:id` | Eliminar bloque |
+| GET | `/audit` | Logs de auditoría |
+
+## Diseño y decisiones técnicas
+
+- **JWT con roles en lowercase**: el payload guarda `role` en minúsculas; el middleware `authorizeRole` compara en lowercase
+- **Reservas bajo transacción Serializable**: previene double-booking del mismo bloque
+- **Soft delete de usuarios**: campo `deletedAt`; el login rechaza usuarios eliminados
+- **`Appointment` unifica reserva y cita**: mismo modelo Prisma, distintos flujos de ruta
+- **Frontend en producción**: el backend sirve el `dist/` de React como archivos estáticos; SPA fallback con `{*path}`
+- **Búsqueda OR**: `q=` busca en nombre del doctor y especialidad simultáneamente
+
+## Variables de entorno
+
+| Variable | Requerida | Default |
+|----------|-----------|---------|
+| `DATABASE_URL` | Sí | — |
+| `JWT_SECRET` | Sí | — |
+| `PORT` | No | `3006` |
+| `SALT_ROUNDS` | No | `10` |
+| `NODE_ENV` | No | `development` |
 
 ---
 
