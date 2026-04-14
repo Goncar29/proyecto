@@ -64,6 +64,47 @@ describe('GET /api/public/doctors', () => {
         const res = await request(app).get('/api/public/doctors?pageSize=999');
         expect(res.status).toBe(400);
     });
+
+    describe('q= search', () => {
+        let doctor;
+        beforeAll(async () => {
+            doctor = await prisma.doctorProfile.findFirst({
+                include: { user: true },
+                where: { user: { isActive: true, isSuspended: false, deletedAt: null } },
+            });
+        });
+
+        it('finds doctor by partial name (case-insensitive)', async () => {
+            if (!doctor) return;
+            const fragment = doctor.user.name.slice(0, 4).toLowerCase();
+            const res = await request(app).get(`/api/public/doctors?q=${encodeURIComponent(fragment)}`);
+            expect(res.status).toBe(200);
+            const ids = res.body.items.map((d) => d.id);
+            expect(ids).toContain(doctor.user.id);
+        });
+
+        it('finds doctor by partial specialty (case-insensitive)', async () => {
+            if (!doctor?.specialty) return;
+            const fragment = doctor.specialty.slice(0, 4).toUpperCase();
+            const res = await request(app).get(`/api/public/doctors?q=${encodeURIComponent(fragment)}`);
+            expect(res.status).toBe(200);
+            const ids = res.body.items.map((d) => d.id);
+            expect(ids).toContain(doctor.user.id);
+        });
+
+        it('returns empty when q= matches nothing', async () => {
+            const res = await request(app).get('/api/public/doctors?q=XYZZYNOEXISTE999');
+            expect(res.status).toBe(200);
+            expect(res.body.items).toHaveLength(0);
+            expect(res.body.total).toBe(0);
+        });
+
+        it('returns 400 for q longer than 100 chars', async () => {
+            const long = 'a'.repeat(101);
+            const res = await request(app).get(`/api/public/doctors?q=${long}`);
+            expect(res.status).toBe(400);
+        });
+    });
 });
 
 describe('GET /api/public/doctors/:id', () => {
