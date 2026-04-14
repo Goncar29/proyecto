@@ -27,9 +27,9 @@ export default function Register() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Crear cuenta</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Crear cuenta</h1>
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
@@ -40,7 +40,7 @@ export default function Register() {
           value={name}
           onChange={e => setName(e.target.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <input
           type="email"
@@ -48,7 +48,7 @@ export default function Register() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <input
           type="password"
@@ -57,7 +57,7 @@ export default function Register() {
           onChange={e => setPassword(e.target.value)}
           required
           minLength={8}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <button
           type="submit"
@@ -67,8 +67,8 @@ export default function Register() {
           {loading ? 'Creando...' : 'Crear cuenta'}
         </button>
       </form>
-      <p className="mt-4 text-gray-600">
-        ¿Ya tenés cuenta? <Link to="/login" className="text-blue-600 hover:underline">Iniciá sesión</Link>
+      <p className="mt-4 text-gray-600 dark:text-gray-400">
+        ¿Ya tenés cuenta? <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">Iniciá sesión</Link>
       </p>
     </div>
   );

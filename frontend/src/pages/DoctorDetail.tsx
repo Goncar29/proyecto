@@ -102,20 +102,20 @@ export default function DoctorDetailPage() {
 
   return (
     <div>
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{doctor.name}</h1>
-        <p className="text-blue-600 mt-1">{doctor.specialty}</p>
-        {doctor.hospital && <p className="text-gray-600 text-sm">{doctor.hospital}</p>}
-        {doctor.location && <p className="text-gray-500 text-sm">{doctor.location}</p>}
-        {doctor.bio && <p className="text-gray-600 mt-3">{doctor.bio}</p>}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{doctor.name}</h1>
+        <p className="text-blue-600 dark:text-blue-400 mt-1">{doctor.specialty}</p>
+        {doctor.hospital && <p className="text-gray-600 dark:text-gray-400 text-sm">{doctor.hospital}</p>}
+        {doctor.location && <p className="text-gray-500 dark:text-gray-400 text-sm">{doctor.location}</p>}
+        {doctor.bio && <p className="text-gray-600 dark:text-gray-300 mt-3">{doctor.bio}</p>}
         <div className="flex items-center gap-2 mt-3">
           <span className="text-yellow-500 text-lg">{'★'.repeat(Math.round(doctor.avgRating))}</span>
-          <span className="text-gray-600">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reviews)</span>
+          <span className="text-gray-600 dark:text-gray-400">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reviews)</span>
         </div>
       </div>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Turnos disponibles</h2>
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>}
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Turnos disponibles</h2>
+      {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4">{error}</div>}
 
       {user?.role === 'PATIENT' && (
         <input
@@ -123,7 +123,7 @@ export default function DoctorDetailPage() {
           placeholder="Motivo de la consulta (opcional)"
           value={reason}
           onChange={e => setReason(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
       )}
 
@@ -136,18 +136,18 @@ export default function DoctorDetailPage() {
 
       {reviews.length > 0 && (
         <>
-          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-4">Reviews</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">Reviews</h2>
           <div className="space-y-3">
             {reviews.map(r => (
-              <div key={r.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div key={r.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
-                    <span className="text-sm font-medium text-gray-700">{r.patient.name}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{r.patient.name}</span>
                   </div>
-                  <span className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
                 </div>
-                {r.text && <p className="text-gray-700">{r.text}</p>}
+                {r.text && <p className="text-gray-700 dark:text-gray-300">{r.text}</p>}
               </div>
             ))}
           </div>

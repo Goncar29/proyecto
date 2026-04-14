@@ -26,9 +26,9 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Iniciar sesión</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Iniciar sesión</h1>
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
@@ -39,7 +39,7 @@ export default function Login() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <input
           type="password"
@@ -47,7 +47,7 @@ export default function Login() {
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
         />
         <button
           type="submit"
@@ -57,8 +57,8 @@ export default function Login() {
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
-      <p className="mt-4 text-gray-600">
-        ¿No tenés cuenta? <Link to="/register" className="text-blue-600 hover:underline">Registrate</Link>
+      <p className="mt-4 text-gray-600 dark:text-gray-400">
+        ¿No tenés cuenta? <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">Registrate</Link>
       </p>
     </div>
   );

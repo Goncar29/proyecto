@@ -34,32 +34,32 @@ export default function Dashboard() {
   };
 
   const statusColor: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    CONFIRMED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-    COMPLETED: 'bg-blue-100 text-blue-800',
+    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-      <p className="text-gray-600 mb-6">Bienvenido, {user?.name} ({user?.role})</p>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">Bienvenido, {user?.name} ({user?.role})</p>
 
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Mis citas</h2>
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Mis citas</h2>
       {loading ? (
         <ListSkeleton count={4} />
       ) : appointments.length === 0 ? (
-        <p className="text-gray-500">No tenés citas registradas.</p>
+        <p className="text-gray-500 dark:text-gray-400">No tenés citas registradas.</p>
       ) : (
         <div className="space-y-3">
           {appointments.map(a => (
-            <div key={a.id} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-gray-900 dark:text-white">
                     Cita #{a.id}
                     {a.timeBlock && (
-                      <span className="text-gray-500 font-normal ml-2">
+                      <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
                         {new Date(a.timeBlock.date).toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
@@ -72,18 +72,18 @@ export default function Dashboard() {
                   {a.status === 'COMPLETED' && user?.role === 'PATIENT' && !reviewed.has(a.id) && (
                     <button
                       onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)}
-                      className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1 rounded-lg"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
                     >
                       {reviewingId === a.id ? 'Cerrar' : 'Dejar review'}
                     </button>
                   )}
                   {reviewed.has(a.id) && (
-                    <span className="text-sm text-green-600">Review enviada</span>
+                    <span className="text-sm text-green-600 dark:text-green-400">Review enviada</span>
                   )}
                   {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
                     <button
                       onClick={() => handleCancel(a.id)}
-                      className="text-sm text-red-600 hover:text-red-800 border border-red-200 px-3 py-1 rounded-lg"
+                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-700 px-3 py-1 rounded-lg"
                     >
                       Cancelar
                     </button>

@@ -55,14 +55,14 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
   return (
     <div>
       {/* Calendar */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 max-w-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 max-w-sm">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <button onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded-lg text-gray-600">
+          <button onClick={prevMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">
             ‹
           </button>
-          <span className="font-medium text-gray-900 capitalize">{monthName}</span>
-          <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded-lg text-gray-600">
+          <span className="font-medium text-gray-900 dark:text-white capitalize">{monthName}</span>
+          <button onClick={nextMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">
             ›
           </button>
         </div>
@@ -70,7 +70,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
         {/* Day names */}
         <div className="grid grid-cols-7 mb-1">
           {days.map(d => (
-            <div key={d} className="text-center text-xs text-gray-400 py-1">{d}</div>
+            <div key={d} className="text-center text-xs text-gray-400 dark:text-gray-500 py-1">{d}</div>
           ))}
         </div>
 
@@ -92,8 +92,8 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
                 className={`
                   h-8 w-8 mx-auto rounded-full text-sm transition-colors
                   ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
-                  ${isAvailable && !isPast && !isSelected ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 font-medium' : ''}
-                  ${!isAvailable || isPast ? 'text-gray-300 cursor-default' : ''}
+                  ${isAvailable && !isPast && !isSelected ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/50 font-medium' : ''}
+                  ${!isAvailable || isPast ? 'text-gray-300 dark:text-gray-600 cursor-default' : ''}
                 `}
               >
                 {day}
@@ -104,9 +104,9 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
+      <div className="flex items-center gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1">
-          <span className="w-4 h-4 rounded-full bg-blue-100 inline-block" /> Disponible
+          <span className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/40 inline-block" /> Disponible
         </span>
         <span className="flex items-center gap-1">
           <span className="w-4 h-4 rounded-full bg-blue-600 inline-block" /> Seleccionado
@@ -116,7 +116,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
       {/* Slots for selected day */}
       {selectedDate && (
         <div>
-          <h3 className="text-base font-semibold text-gray-900 mb-3">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
             Horarios para el {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -124,8 +124,8 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
               const start = new Date(slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               const end = new Date(slot.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               return (
-                <div key={slot.id} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
-                  <span className="text-gray-900 font-medium">{start} – {end}</span>
+                <div key={slot.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex items-center justify-between">
+                  <span className="text-gray-900 dark:text-white font-medium">{start} – {end}</span>
                   {isPatient ? (
                     <button
                       onClick={() => onBook(slot.id)}
@@ -135,7 +135,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
                       {booking === slot.id ? 'Reservando...' : 'Reservar'}
                     </button>
                   ) : (
-                    <span className="text-xs text-gray-400">Iniciá sesión como paciente</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">Iniciá sesión como paciente</span>
                   )}
                 </div>
               );
@@ -145,11 +145,11 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
       )}
 
       {!selectedDate && availableDates.size === 0 && (
-        <p className="text-gray-500">No hay turnos disponibles en los próximos 30 días.</p>
+        <p className="text-gray-500 dark:text-gray-400">No hay turnos disponibles en los próximos 30 días.</p>
       )}
 
       {!selectedDate && availableDates.size > 0 && (
-        <p className="text-gray-400 text-sm">Seleccioná un día resaltado para ver los horarios.</p>
+        <p className="text-gray-400 dark:text-gray-500 text-sm">Seleccioná un día resaltado para ver los horarios.</p>
       )}
     </div>
   );
