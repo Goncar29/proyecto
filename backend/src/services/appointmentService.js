@@ -44,44 +44,37 @@ exports.getUserAppointments = async (userId, query = {}) => {
 };
 
 exports.createAppointment = async (data) => {
-    try {
-        const timeBlock = await prisma.timeBlock.findUnique({
-            where: { id: data.timeBlockId }
+    return prisma.$transaction(async (tx) => {
+        const timeBlock = await tx.timeBlock.findUnique({
+            where: { id: data.timeBlockId },
         });
-        
         if (!timeBlock) {
-            throw new Error('TimeBlock no encontrado');
+            const e = new Error('El bloque de tiempo no existe.');
+            e.status = 404; e.code = 'NOT_FOUND';
+            throw e;
         }
-        
-        const existingAppointment = await prisma.appointment.findUnique({
-            where: { timeBlockId: data.timeBlockId }
+
+        const existingAppointment = await tx.appointment.findUnique({
+            where: { timeBlockId: data.timeBlockId },
         });
-        
         if (existingAppointment) {
-            throw new Error('Ya existe una cita para este bloque de tiempo');
+            const e = new Error('Ya existe una cita para este bloque de tiempo.');
+            e.status = 409; e.code = 'CONFLICT';
+            throw e;
         }
-        
-        const appointment = await prisma.appointment.create({
+
+        return tx.appointment.create({
             data: {
-                date: new Date(),
+                date: timeBlock.startTime,
                 status: data.status || 'PENDING',
                 notes: data.notes,
-                timeBlock: {
-                    connect: { id: data.timeBlockId }
-                },
-                patient: {
-                    connect: { id: data.patientId }
-                },
-                doctor: {
-                    connect: { id: timeBlock.doctorId }
-                }
+                timeBlock: { connect: { id: data.timeBlockId } },
+                patient:   { connect: { id: data.patientId } },
+                doctor:    { connect: { id: timeBlock.doctorId } },
             },
-            include: { timeBlock: true }
+            include: { timeBlock: true },
         });
-        return appointment;
-    } catch (error) {
-        throw new Error(error.message);
-    }
+    });
 };
 
 /**

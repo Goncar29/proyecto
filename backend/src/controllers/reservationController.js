@@ -1,6 +1,6 @@
 const reservationService = require('../services/reservationService');
 
-exports.createReservation = async (req, res) => {
+exports.createReservation = async (req, res, next) => {
     try {
         const { doctorId, timeBlockId, reason, notes } = req.body;
         const patientId = req.user.id;
@@ -12,32 +12,32 @@ exports.createReservation = async (req, res) => {
 
         res.status(201).json(reservation);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };
 
-exports.getReservations = async (req, res) => {
+exports.getReservations = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const reservations = await reservationService.getUserReservations(userId);
         res.status(200).json(reservations);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        return next(error);
     }
 };
 
-exports.updateReservation = async (req, res) => {
+exports.updateReservation = async (req, res, next) => {
     try {
         const { reservationId } = req.params;
         const { timeBlockId, reason, notes } = req.body;
 
         const existing = await reservationService.getReservation(reservationId);
         if (!existing) {
-            return res.status(404).json({ error: 'Reserva no encontrada' });
+            return res.status(404).json({ error: 'Reserva no encontrada.' });
         }
 
         if (req.user.role === 'patient' && existing.patientId !== req.user.id) {
-            return res.status(403).json({ error: 'Access denied' });
+            return res.status(403).json({ error: 'No tenés permiso para modificar esta reserva.' });
         }
 
         const doctorId = existing.doctorId;
@@ -53,16 +53,16 @@ exports.updateReservation = async (req, res) => {
 
         res.status(200).json(updated);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };
 
-exports.deleteReservation = async (req, res) => {
+exports.deleteReservation = async (req, res, next) => {
     try {
         const { id } = req.params;
         await reservationService.deleteReservation(id);
         res.status(204).send();
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };

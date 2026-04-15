@@ -3,10 +3,9 @@ import { api } from '@/api/client';
 import { useToast } from '@/context/ToastContext';
 import TimeBlocksPanel from '@/components/admin/TimeBlocksPanel';
 import AuditLogsPanel from '@/components/admin/AuditLogsPanel';
-import type { User, PaginatedResponse } from '@/types';
+import type { AdminUser, PaginatedResponse } from '@/types';
 
 type Tab = 'users' | 'timeblocks' | 'audit';
-type AdminUser = User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null };
 
 const PAGE_SIZE = 20;
 

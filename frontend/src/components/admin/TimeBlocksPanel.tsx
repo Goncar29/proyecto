@@ -29,14 +29,30 @@ export default function TimeBlocksPanel() {
   const [endTime, setEndTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  async function fetchAllDoctors(): Promise<DoctorOption[]> {
+    const PAGE_SIZE = 50;
+    let page = 1;
+    let all: DoctorOption[] = [];
+    while (true) {
+      const data = await api.get<{ items: DoctorOption[]; total: number }>(
+        '/public/doctors',
+        { pageSize: String(PAGE_SIZE), page: String(page) }
+      );
+      all = [...all, ...data.items];
+      if (all.length >= data.total) break;
+      page++;
+    }
+    return all;
+  }
+
   useEffect(() => {
     Promise.all([
       api.get<TimeBlockWithDoctor[]>('/time-blocks'),
-      api.get<{ items: DoctorOption[] }>('/public/doctors', { pageSize: '50' }),
+      fetchAllDoctors(),
     ])
-      .then(([tb, docs]) => {
+      .then(([tb, allDoctors]) => {
         setBlocks(tb);
-        setDoctors(docs.items);
+        setDoctors(allDoctors);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -64,6 +80,7 @@ export default function TimeBlocksPanel() {
       setStartTime('');
       setEndTime('');
       toast('Bloque de tiempo creado', 'success');
+      fetchAllDoctors().then(setDoctors);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : 'Error al crear bloque', 'error');
     } finally {
