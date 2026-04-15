@@ -32,7 +32,7 @@ export default function TimeBlocksPanel() {
   useEffect(() => {
     Promise.all([
       api.get<TimeBlockWithDoctor[]>('/time-blocks'),
-      api.get<{ items: DoctorOption[] }>('/public/doctors', { pageSize: '100' }),
+      api.get<{ items: DoctorOption[] }>('/public/doctors', { pageSize: '50' }),
     ])
       .then(([tb, docs]) => {
         setBlocks(tb);
