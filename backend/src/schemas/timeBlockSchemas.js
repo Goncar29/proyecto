@@ -7,7 +7,7 @@ const createTimeBlockSchema = Joi.object({
         then: Joi.number().integer().positive().required(), // admin debe indicar doctorId
         otherwise: Joi.forbidden(), // doctor no puede enviarlo (se asigna automáticamente)
     }),
-    startTime: Joi.date().iso().required(),
+    startTime: Joi.date().iso().min('now').required(),
     endTime: Joi.date().iso().greater(Joi.ref('startTime')).required(),
 });
 
