@@ -3,24 +3,36 @@ import { api } from '@/api/client';
 import { useToast } from '@/context/ToastContext';
 import TimeBlocksPanel from '@/components/admin/TimeBlocksPanel';
 import AuditLogsPanel from '@/components/admin/AuditLogsPanel';
-import type { User } from '@/types';
+import type { User, PaginatedResponse } from '@/types';
 
 type Tab = 'users' | 'timeblocks' | 'audit';
+type AdminUser = User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null };
+
+const PAGE_SIZE = 20;
 
 export default function Admin() {
   const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('users');
-  const [users, setUsers] = useState<(User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null })[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [promoting, setPromoting] = useState<number | null>(null);
   const [specialty, setSpecialty] = useState('');
   const [showPromote, setShowPromote] = useState<number | null>(null);
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   useEffect(() => {
-    api.get<(User & { isActive: boolean; isSuspended: boolean; doctorProfile?: { specialty: string } | null })[]>('/admin/users')
-      .then(setUsers)
+    if (tab !== 'users') return;
+    setLoading(true);
+    api.get<PaginatedResponse<AdminUser>>(`/admin/users?page=${page}&pageSize=${PAGE_SIZE}`)
+      .then(res => {
+        setUsers(res.items);
+        setTotal(res.total);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [tab, page]);
 
   const toggleStatus = async (userId: number, field: 'isActive' | 'isSuspended', current: boolean) => {
     try {
@@ -81,6 +93,11 @@ export default function Admin() {
 
       {tab === 'users' && (
         <>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {total} usuario{total !== 1 ? 's' : ''} en total
+            </p>
+          </div>
           {loading ? (
             <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
           ) : (
@@ -140,6 +157,28 @@ export default function Admin() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <button
+                onClick={() => setPage(p => p - 1)}
+                disabled={page === 1 || loading}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Página {page} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={page === totalPages || loading}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                Siguiente →
+              </button>
             </div>
           )}
         </>

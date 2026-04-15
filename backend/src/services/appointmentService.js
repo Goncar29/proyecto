@@ -201,27 +201,33 @@ exports.completeAppointment = async (appointmentId, caller, notes) => {
 };
 
 exports.updateAppointment = async (id, data) => {
-    try {
-        const allowed = {};
-        // status intentionally excluded — use PATCH /:id/confirm, /complete, or /cancel
-        if (data.notes !== undefined) allowed.notes = data.notes;
-        if (data.reason !== undefined) allowed.reason = data.reason;
-
-        const appointment = await prisma.appointment.update({
-            where: { id: parseInt(id) },
-            data: allowed,
-            include: { timeBlock: true }
-        });
-        return appointment;
-    } catch (error) {
-        throw new Error('Error al actualizar la cita');
+    const numId = parseInt(id, 10);
+    const existing = await prisma.appointment.findUnique({ where: { id: numId } });
+    if (!existing) {
+        const e = new Error('Cita no encontrada');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
     }
+
+    const allowed = {};
+    // status intentionally excluded — use PATCH /:id/confirm, /complete, or /cancel
+    if (data.notes !== undefined) allowed.notes = data.notes;
+    if (data.reason !== undefined) allowed.reason = data.reason;
+
+    return prisma.appointment.update({
+        where: { id: numId },
+        data: allowed,
+        include: { timeBlock: true },
+    });
 };
 
 exports.deleteAppointment = async (id) => {
-    try {
-        await prisma.appointment.delete({ where: { id: parseInt(id) } });
-    } catch (error) {
-        throw new Error('Error al eliminar la cita');
+    const numId = parseInt(id, 10);
+    const existing = await prisma.appointment.findUnique({ where: { id: numId } });
+    if (!existing) {
+        const e = new Error('Cita no encontrada');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
     }
+    await prisma.appointment.delete({ where: { id: numId } });
 };

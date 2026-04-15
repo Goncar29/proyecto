@@ -66,23 +66,34 @@ const listReservationsService = async () => {
     });
 };
 
-// Listar usuarios activos (no eliminados)
-const getUsersService = async () => {
-    return await prisma.user.findMany({
-        where: { deletedAt: null },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            isActive: true,
-            isSuspended: true,
-            createdAt: true,
-            updatedAt: true,
-            doctorProfile: { select: { specialty: true } },
-        },
-        orderBy: { createdAt: 'desc' }
-    });
+// Listar usuarios activos (no eliminados) con paginación opcional
+const getUsersService = async ({ page = 1, pageSize = 50 } = {}) => {
+    const take = Math.min(Math.max(1, Number(pageSize)), 200);
+    const skip = (Math.max(1, Number(page)) - 1) * take;
+    const where = { deletedAt: null };
+
+    const [items, total] = await prisma.$transaction([
+        prisma.user.findMany({
+            where,
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                isActive: true,
+                isSuspended: true,
+                createdAt: true,
+                updatedAt: true,
+                doctorProfile: { select: { specialty: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take,
+        }),
+        prisma.user.count({ where }),
+    ]);
+
+    return { items, total, page: Number(page), pageSize: take };
 };
 
 // Obtener usuario por ID (si no está eliminado)

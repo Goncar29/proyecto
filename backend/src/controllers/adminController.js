@@ -28,8 +28,9 @@ const listReservations = async (req, res, next) => {
 
 const getUsers = async (req, res, next) => {
     try {
-        const users = await getUsersService();
-        res.json(users);
+        const { page = 1, pageSize = 50 } = req.query;
+        const result = await getUsersService({ page, pageSize });
+        res.json(result);
     } catch (error) {
         return next(error);
     }

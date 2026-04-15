@@ -72,22 +72,22 @@ exports.completeAppointment = async (req, res, next) => {
     }
 };
 
-exports.updateAppointment = async (req, res) => {
+exports.updateAppointment = async (req, res, next) => {
     try {
         const { id } = req.params;
         const appointment = await appointmentService.updateAppointment(id, req.body);
         return res.status(200).json(appointment);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };
 
-exports.deleteAppointment = async (req, res) => {
+exports.deleteAppointment = async (req, res, next) => {
     try {
         const { id } = req.params;
         await appointmentService.deleteAppointment(id);
         return res.status(204).send();
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };

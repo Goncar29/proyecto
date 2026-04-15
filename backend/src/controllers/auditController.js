@@ -1,14 +1,11 @@
 const { getAuditLogs } = require('../services/audit');
 
-const getAuditLogsController = async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Access denied' });
-    }
+const getAuditLogsController = async (req, res, next) => {
     try {
         const logs = await getAuditLogs(req.query);
         res.json(logs);
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching audit logs' });
+        return next(error);
     }
 };
 
