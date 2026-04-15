@@ -4,15 +4,28 @@ import { useToast } from '@/context/ToastContext';
 import { api } from '@/api/client';
 import { ListSkeleton } from '@/components/Skeleton';
 import ReviewForm from '@/components/ReviewForm';
+import DoctorAvatar from '@/components/DoctorAvatar';
 import type { Appointment, PaginatedResponse } from '@/types';
 
 const PAGE_SIZE = 10;
+
+interface DoctorProfile {
+  specialty: string;
+  hospital: string | null;
+  location: string | null;
+  bio: string | null;
+  photoUrl: string | null;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState<Partial<DoctorProfile>>({});
+  const [savingProfile, setSavingProfile] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
@@ -34,6 +47,30 @@ export default function Dashboard() {
       })
       .finally(() => setLoading(false));
   }, [user, page, statusFilter]);
+
+  useEffect(() => {
+    if (!user || user.role !== 'DOCTOR') return;
+    api.get<DoctorProfile>(`/public/doctors/${user.id}`)
+      .then(d => {
+        setDoctorProfile(d);
+        setProfileForm({ specialty: d.specialty, hospital: d.hospital ?? '', location: d.location ?? '', bio: d.bio ?? '', photoUrl: d.photoUrl ?? '' });
+      })
+      .catch(() => {}); // perfil puede no existir aún si fue recién promovido
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const updated = await api.patch<DoctorProfile>('/doctors/me/profile', profileForm);
+      setDoctorProfile(updated);
+      setEditingProfile(false);
+      toast('Perfil actualizado', 'success');
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : 'Error al guardar el perfil', 'error');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const updateLocalStatus = (id: number, status: Appointment['status']) =>
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -92,6 +129,96 @@ export default function Dashboard() {
           ? `Dr. ${user?.name} — gestioná tus citas`
           : `Bienvenido, ${user?.name}`}
       </p>
+
+      {/* Sección Mi perfil — solo para doctores */}
+      {isDoctor && doctorProfile && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mi perfil</h2>
+            <button
+              onClick={() => setEditingProfile(e => !e)}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {editingProfile ? 'Cancelar' : 'Editar'}
+            </button>
+          </div>
+
+          {editingProfile ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Foto (URL)</label>
+                <input
+                  type="url"
+                  placeholder="https://ejemplo.com/foto.jpg"
+                  value={profileForm.photoUrl ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, photoUrl: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Especialidad</label>
+                <input
+                  type="text"
+                  value={profileForm.specialty ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, specialty: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Hospital</label>
+                  <input
+                    type="text"
+                    value={profileForm.hospital ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, hospital: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Ubicación</label>
+                  <input
+                    type="text"
+                    value={profileForm.location ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, location: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Biografía</label>
+                <textarea
+                  rows={3}
+                  value={profileForm.bio ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                />
+              </div>
+              <button
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+              >
+                {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-start gap-4">
+              <DoctorAvatar name={user?.name ?? ''} photoUrl={doctorProfile.photoUrl} size="lg" />
+              <div className="text-sm space-y-1">
+                <p className="font-medium text-gray-900 dark:text-white">{doctorProfile.specialty}</p>
+                {doctorProfile.hospital && <p className="text-gray-500 dark:text-gray-400">{doctorProfile.hospital}</p>}
+                {doctorProfile.location && <p className="text-gray-500 dark:text-gray-400">{doctorProfile.location}</p>}
+                {doctorProfile.bio && <p className="text-gray-600 dark:text-gray-300 mt-2">{doctorProfile.bio}</p>}
+                {!doctorProfile.photoUrl && (
+                  <p className="text-orange-500 dark:text-orange-400 text-xs mt-1">
+                    Sin foto de perfil — agregá una URL en "Editar"
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters + count row */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">

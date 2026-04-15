@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { DetailSkeleton } from '@/components/Skeleton';
 import AvailabilityCalendar from '@/components/AvailabilityCalendar';
+import DoctorAvatar from '@/components/DoctorAvatar';
 
 interface DoctorDetail {
   id: number;
@@ -103,15 +104,20 @@ export default function DoctorDetailPage() {
   return (
     <div>
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{doctor.name}</h1>
-        <p className="text-blue-600 dark:text-blue-400 mt-1">{doctor.specialty}</p>
-        {doctor.hospital && <p className="text-gray-600 dark:text-gray-400 text-sm">{doctor.hospital}</p>}
-        {doctor.location && <p className="text-gray-500 dark:text-gray-400 text-sm">{doctor.location}</p>}
-        {doctor.bio && <p className="text-gray-600 dark:text-gray-300 mt-3">{doctor.bio}</p>}
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-yellow-500 text-lg">{'★'.repeat(Math.round(doctor.avgRating))}</span>
-          <span className="text-gray-600 dark:text-gray-400">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reviews)</span>
+        <div className="flex items-start gap-5">
+          <DoctorAvatar name={doctor.name} photoUrl={doctor.photoUrl} size="lg" />
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{doctor.name}</h1>
+            <p className="text-blue-600 dark:text-blue-400 mt-1">{doctor.specialty}</p>
+            {doctor.hospital && <p className="text-gray-600 dark:text-gray-400 text-sm">{doctor.hospital}</p>}
+            {doctor.location && <p className="text-gray-500 dark:text-gray-400 text-sm">{doctor.location}</p>}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-yellow-500 text-lg">{'★'.repeat(Math.round(doctor.avgRating))}</span>
+              <span className="text-gray-600 dark:text-gray-400">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reviews)</span>
+            </div>
+          </div>
         </div>
+        {doctor.bio && <p className="text-gray-600 dark:text-gray-300 mt-4">{doctor.bio}</p>}
       </div>
 
       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Turnos disponibles</h2>

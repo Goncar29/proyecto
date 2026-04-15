@@ -196,7 +196,7 @@ const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReas
 };
 
 // Promover PATIENT a DOCTOR atómicamente (role + DoctorProfile)
-const promoteToDoctorService = async (userId, { specialty, specialties, hospital, location, bio }) => {
+const promoteToDoctorService = async (userId, { specialty, specialties, hospital, location, bio, photoUrl }) => {
     const id = Number(userId);
 
     return await prisma.$transaction(async (tx) => {
@@ -237,6 +237,7 @@ const promoteToDoctorService = async (userId, { specialty, specialties, hospital
                 hospital: hospital || null,
                 location: location || null,
                 bio: bio || null,
+                photoUrl: photoUrl || null,
             },
         });
 

@@ -6,6 +6,7 @@ const promoteDoctorSchema = Joi.object({
     hospital: Joi.string().max(200).allow('').optional(),
     location: Joi.string().max(200).allow('').optional(),
     bio: Joi.string().max(2000).allow('').optional(),
+    photoUrl: Joi.string().uri().max(500).allow('', null).optional(),
 });
 
 module.exports = { promoteDoctorSchema };
