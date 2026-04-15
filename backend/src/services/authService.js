@@ -26,7 +26,8 @@ const registerUser = async (email, password, name) => {
         return newUser;
     } catch (error) {
         require('../utils/logger').error({ err: error }, 'User registration failed');
-        throw new Error('Error con conexión a la base de datos');
+        if (error.code === 'P2002') throw new Error('Ya existe una cuenta con ese email.');
+        throw new Error('Error al crear la cuenta. Intentá de nuevo más tarde.');
     }
 };
 

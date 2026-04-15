@@ -27,7 +27,7 @@ export default function Admin() {
       await api.patch(`/admin/users/${userId}/status`, { [field]: !current });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, [field]: !current } : u));
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Error', 'error');
+      toast(err instanceof Error ? err.message : 'No se pudo actualizar el estado del usuario.', 'error');
     }
   };
 
@@ -41,7 +41,7 @@ export default function Admin() {
       setSpecialty('');
       toast('Usuario promovido a doctor', 'success');
     } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : 'Error al promover', 'error');
+      toast(err instanceof Error ? err.message : 'No se pudo promover el usuario a doctor.', 'error');
     } finally {
       setPromoting(null);
     }

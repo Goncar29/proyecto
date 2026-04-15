@@ -8,78 +8,48 @@ const { createTimeBlockService,
     promoteToDoctorService,
 } = require('../services/adminService');
 
-const createTimeBlock = async (req, res) => {
-    const { doctorId, startTime, endTime } = req.body;
-
-    // Validaciones según el schema
-    if (!doctorId || isNaN(doctorId)) {
-        return res.status(400).json({ error: 'doctorId is required and must be a number' });
-    }
-    if (!startTime || !endTime) {
-        return res.status(400).json({ error: 'startTime and endTime are required' });
-    }
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    if (isNaN(start) || isNaN(end)) {
-        return res.status(400).json({ error: 'startTime and endTime must be valid dates' });
-    }
-    if (start >= end) {
-        return res.status(400).json({ error: 'startTime must be before endTime' });
-    }
-
+const createTimeBlock = async (req, res, next) => {
     try {
-        const newTimeBlock = await createTimeBlockService(doctorId, startTime, endTime);
+        const newTimeBlock = await createTimeBlockService(req.body.doctorId, req.body.startTime, req.body.endTime);
         res.status(201).json(newTimeBlock);
     } catch (error) {
-        res.status(error.status || 500).json({ error: error.message || 'Error creating time block' });
+        return next(error);
     }
 };
 
-const listReservations = async (req, res) => {
+const listReservations = async (req, res, next) => {
     try {
         const reservations = await listReservationsService();
         res.json(reservations);
     } catch (error) {
-        res.status(500).json({ error: 'Error fetching reservations' });
+        return next(error);
     }
 };
 
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
     try {
         const users = await getUsersService();
         res.json(users);
     } catch (error) {
-        require('../utils/logger').error({ err: error }, 'Admin controller error');
-        res.status(500).json({ error: 'Error fetching users' });
+        return next(error);
     }
 };
 
-const getUserId = async (req, res) => {
+const getUserId = async (req, res, next) => {
     try {
         const { id } = req.params;
-        if (!id || isNaN(id)) {
-            return res.status(400).json({
-                error: !id
-                    ? 'User ID is required'
-                    : 'User ID must be a number',
-            });
-        }
-
         const user = await getUserIdService(id);
-        if (!user || user.deletedAt) {
-            return res.status(404).json({ error: 'User not found' });
+        if (!user) {
+            return res.status(404).json({ error: 'El usuario no existe.' });
         }
-
-        // No exponer password
         const { password, ...userSafe } = user;
         res.json(userSafe);
     } catch (error) {
-        require('../utils/logger').error({ err: error }, 'Admin controller error');
-        res.status(500).json({ error: 'Error fetching users' });
+        return next(error);
     }
 };
 
-const updateUserId = async (req, res) => {
+const updateUserId = async (req, res, next) => {
     try {
         const { name, email, password, role } = req.body;
         const data = {};
@@ -90,41 +60,27 @@ const updateUserId = async (req, res) => {
         const updated = await updateUserService(req.params.id, data);
         res.status(200).json(updated);
     } catch (error) {
-        require('../utils/logger').error({ err: error }, 'Admin controller error');
-        res.status(500).json({ error: 'Error fetching users' });
+        return next(error);
     }
 };
 
-const deleteUserId = async (req, res) => {
+const deleteUserId = async (req, res, next) => {
     try {
         await deleteUserIdService(req.params.id);
-        res.status(200).json({ message: 'User deleted successfully' })
+        res.status(200).json({ message: 'Usuario eliminado correctamente.' });
     } catch (error) {
-        require('../utils/logger').error({ err: error }, 'Admin controller error');
-        res.status(500).json({ error: 'Error deleting user' });
+        return next(error);
     }
 };
 
-const toggleUserStatus = async (req, res) => {
+const toggleUserStatus = async (req, res, next) => {
     const userId = parseInt(req.params.id, 10);
     const { isActive, isSuspended, suspensionReason } = req.body;
-
     try {
-        // Llamamos al service
-        const updatedUser = await toggleUserStatusService(
-            userId,
-            isActive,
-            isSuspended,
-            suspensionReason
-        );
-
-        res.json({
-            message: 'User status updated successfully',
-            user: updatedUser
-        });
+        const updatedUser = await toggleUserStatusService(userId, isActive, isSuspended, suspensionReason);
+        res.json({ message: 'Estado del usuario actualizado.', user: updatedUser });
     } catch (error) {
-        require('../utils/logger').error({ err: error }, 'Admin controller error');
-        res.status(500).json({ error: error.message || 'Error toggling user status' });
+        return next(error);
     }
 };
 

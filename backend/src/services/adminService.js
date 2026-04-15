@@ -5,10 +5,14 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
     if (isNaN(start) || isNaN(end) || start >= end) {
-        throw new Error('Invalid startTime/endTime');
+        const e = new Error('Las fechas de inicio y fin no son válidas o el inicio es posterior al fin.');
+        e.status = 400;
+        throw e;
     }
     if (start <= new Date()) {
-        throw new Error('startTime must be in the future');
+        const e = new Error('La hora de inicio no puede ser en el pasado.');
+        e.status = 400;
+        throw e;
     }
 
     const doctor = await prisma.user.findUnique({ where: { id: parseInt(doctorId) } });
@@ -30,7 +34,10 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
         });
         
         if (overlapping) {
-            throw new Error('Time block overlaps with an existing block for this doctor');
+            const e = new Error('El horario se superpone con un bloque existente de este doctor.');
+            e.status = 409;
+            e.code = 'CONFLICT';
+            throw e;
         }
 
         const date = new Date(start);
@@ -103,7 +110,7 @@ const getUserIdService = async (id) => {
 const updateUserService = async (id, data) => {
     const VALID_ROLES = ['PATIENT', 'DOCTOR', 'ADMIN'];
     if (data.role && !VALID_ROLES.includes(data.role.toUpperCase())) {
-        const error = new Error('Invalid role');
+        const error = new Error('El rol especificado no es válido. Debe ser PATIENT, DOCTOR o ADMIN.');
         error.status = 400;
         throw error;
     }
@@ -149,7 +156,11 @@ const toggleUserStatusService = async (id, isActive, isSuspended, suspensionReas
             where: { id: Number(id) }
         });
         
-        if (!user || user.deletedAt) throw new Error('User not found');
+        if (!user || user.deletedAt) {
+            const e = new Error('El usuario no existe.');
+            e.status = 404; e.code = 'NOT_FOUND';
+            throw e;
+        }
 
         const data = {};
         data.isActive = isActive !== undefined ? isActive : !user.isActive;
@@ -181,22 +192,22 @@ const promoteToDoctorService = async (userId, { specialty, specialties, hospital
         const user = await tx.user.findUnique({ where: { id } });
 
         if (!user || user.deletedAt) {
-            const e = new Error('User not found');
+            const e = new Error('El usuario no existe.');
             e.status = 404; e.code = 'NOT_FOUND';
             throw e;
         }
         if (!user.isActive || user.isSuspended) {
-            const e = new Error('User account is inactive or suspended');
+            const e = new Error('La cuenta del usuario está inactiva o suspendida.');
             e.status = 409; e.code = 'INVALID_STATE';
             throw e;
         }
         if (user.role === 'DOCTOR') {
-            const e = new Error('User is already a DOCTOR');
+            const e = new Error('El usuario ya tiene el rol de doctor.');
             e.status = 409; e.code = 'ALREADY_DOCTOR';
             throw e;
         }
         if (user.role !== 'PATIENT') {
-            const e = new Error('Only PATIENT users can be promoted to DOCTOR');
+            const e = new Error('Solo se puede promover a doctor a usuarios con rol de paciente.');
             e.status = 409; e.code = 'INVALID_ROLE';
             throw e;
         }

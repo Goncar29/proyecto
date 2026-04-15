@@ -70,7 +70,7 @@ export default function DoctorDetailPage() {
         setSlots(avail);
         setReviews(rev.items);
       })
-      .catch(() => setError('Doctor no encontrado'))
+      .catch(() => setError('No se pudo cargar la información del doctor. Verificá tu conexión e intentá de nuevo.'))
       .finally(() => setLoading(false));
   }, [id]);
 
