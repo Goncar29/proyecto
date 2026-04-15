@@ -24,7 +24,16 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
-    const err = new Error(body.error || 'Request failed') as Error & {
+    // Backend has two error shapes:
+    //   validate middleware → { message, details[] }
+    //   errorHandler       → { error, code?, details? }
+    // Show the first validation detail when available — most specific message.
+    const message =
+      (Array.isArray(body.details) && body.details[0]) ||
+      body.error ||
+      body.message ||
+      'Request failed';
+    const err = new Error(message) as Error & {
       status: number;
       code?: string;
     };

@@ -44,6 +44,10 @@ export default function TimeBlocksPanel() {
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!doctorId || !date || !startTime || !endTime) return;
+    if (endTime <= startTime) {
+      toast('La hora de fin debe ser posterior a la hora de inicio', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const startISO = new Date(`${date}T${startTime}:00`).toISOString();
