@@ -268,12 +268,15 @@ describe('PATCH /api/admin/users/:id/status', () => {
 // GET /api/admin/audit
 // ---------------------------------------------------------------------------
 describe('GET /api/admin/audit', () => {
-    it('admin obtiene logs → 200 array', async () => {
+    it('admin obtiene logs → 200 con envelope paginado', async () => {
         const res = await request(app)
             .get('/api/admin/audit')
             .set('Authorization', `Bearer ${tokens.admin}`);
         expect(res.status).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
+        expect(Array.isArray(res.body.items)).toBe(true);
+        expect(typeof res.body.total).toBe('number');
+        expect(typeof res.body.page).toBe('number');
+        expect(typeof res.body.pageSize).toBe('number');
     });
 
     it('cada log incluye usuario con id, name, email, role', async () => {
@@ -286,8 +289,8 @@ describe('GET /api/admin/audit', () => {
             .get('/api/admin/audit')
             .set('Authorization', `Bearer ${tokens.admin}`);
         expect(res.status).toBe(200);
-        if (res.body.length > 0) {
-            const log = res.body[0];
+        if (res.body.items.length > 0) {
+            const log = res.body.items[0];
             expect(log).toHaveProperty('userId');
             expect(log).toHaveProperty('action');
             expect(log.user).toBeDefined();
@@ -301,8 +304,8 @@ describe('GET /api/admin/audit', () => {
             .get('/api/admin/audit?action=listar')
             .set('Authorization', `Bearer ${tokens.admin}`);
         expect(res.status).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
-        res.body.forEach(log => {
+        expect(Array.isArray(res.body.items)).toBe(true);
+        res.body.items.forEach(log => {
             expect(log.action.toLowerCase()).toContain('listar');
         });
     });
@@ -312,7 +315,8 @@ describe('GET /api/admin/audit', () => {
             .get('/api/admin/audit?page=1&limit=2')
             .set('Authorization', `Bearer ${tokens.admin}`);
         expect(res.status).toBe(200);
-        expect(res.body.length).toBeLessThanOrEqual(2);
+        expect(res.body.items.length).toBeLessThanOrEqual(2);
+        expect(res.body.pageSize).toBe(2);
     });
 
     it('limit inválido (> 1000) → 400', async () => {

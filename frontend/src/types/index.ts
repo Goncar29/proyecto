@@ -64,3 +64,9 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export type AdminUser = User & {
+  isActive: boolean;
+  isSuspended: boolean;
+  doctorProfile?: { specialty: string } | null;
+};

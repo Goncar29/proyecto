@@ -11,16 +11,19 @@ interface AuditLog {
 
 export default function AuditLogsPanel() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
 
+  const PAGE_SIZE = 30;
+
   useEffect(() => {
     setLoading(true);
-    const params: Record<string, string> = { page: String(page), limit: '30' };
+    const params: Record<string, string> = { page: String(page), limit: String(PAGE_SIZE) };
     if (actionFilter) params.action = actionFilter;
-    api.get<AuditLog[]>('/admin/audit', params)
-      .then(setLogs)
+    api.get<{ items: AuditLog[]; total: number; page: number; pageSize: number }>('/admin/audit', params)
+      .then(data => { setLogs(data.items); setTotal(data.total); })
       .finally(() => setLoading(false));
   }, [page, actionFilter]);
 
@@ -77,7 +80,7 @@ export default function AuditLogsPanel() {
         <span className="text-sm text-gray-600 dark:text-gray-400">Página {page}</span>
         <button
           onClick={() => setPage(p => p + 1)}
-          disabled={logs.length < 30}
+          disabled={page * PAGE_SIZE >= total}
           className="text-sm border border-gray-300 dark:border-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
         >
           Siguiente

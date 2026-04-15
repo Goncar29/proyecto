@@ -6,10 +6,9 @@ const createReservationSchema = Joi.object({
             'number.base': 'El ID del doctor debe ser un número.',
             'any.required': 'El doctor es obligatorio.',
         }),
-    patientId: Joi.number().integer().positive().required()
+    patientId: Joi.number().integer().positive().optional()
         .messages({
             'number.base': 'El ID del paciente debe ser un número.',
-            'any.required': 'El paciente es obligatorio.',
         }),
     timeBlockId: Joi.number().integer().positive().required()
         .messages({

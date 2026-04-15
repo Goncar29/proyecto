@@ -3,15 +3,15 @@ const { validateEmail, validateName, validatePassword } = require('../utils/vali
 
 const updateUser = async (req, res) => {
     // Autenticación
-    if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+    if (!req.user) return res.status(401).json({ error: 'No autenticado.' });
 
     const { id } = req.params;
     // Validar id numérico
-    if (!id || isNaN(Number(id))) return res.status(400).json({ error: 'Invalid user id' });
+    if (!id || isNaN(Number(id))) return res.status(400).json({ error: 'El ID de usuario no es válido.' });
 
     // Permitir solo que el usuario modifique su propio perfil
     if (Number(req.user.id) !== Number(id)) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'No tenés permiso para modificar este usuario.' });
     }
 
     const payload = req.body || {};
@@ -22,19 +22,19 @@ const updateUser = async (req, res) => {
     if (payload.password !== undefined) allowed.password = payload.password;
 
     if (Object.keys(allowed).length === 0) {
-        return res.status(400).json({ error: 'Nothing to update' });
+        return res.status(400).json({ error: 'No hay campos para actualizar.' });
     }
 
     // Validaciones por campo
     if (allowed.email !== undefined && !validateEmail(allowed.email)) {
-        return res.status(400).json({ error: 'Invalid email format' });
+        return res.status(400).json({ error: 'El formato del email no es válido.' });
     }
     if (allowed.name !== undefined && !validateName(allowed.name)) {
-        return res.status(400).json({ error: 'Invalid name' });
+        return res.status(400).json({ error: 'El nombre no es válido.' });
     }
     if (allowed.password !== undefined) {
         if (!validatePassword(allowed.password)) {
-            return res.status(400).json({ error: 'Password must be at least 8 characters' });
+            return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres.' });
         }
     }
 
@@ -45,7 +45,7 @@ const updateUser = async (req, res) => {
     } catch (err) {
         // Manejo de errores esperados: conflicto de email, validaciones del servicio, etc.
         const status = err.status || (err.message && err.message.toLowerCase().includes('email') ? 409 : 400);
-        return res.status(status).json({ error: err.message || 'Error updating user' });
+        return res.status(status).json({ error: err.message || 'Error al actualizar el usuario.' });
     }
 };
 

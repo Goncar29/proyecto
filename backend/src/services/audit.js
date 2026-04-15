@@ -44,19 +44,23 @@ const getAuditLogs = async (options = {}) => {
     if (from) where.timestamp.gte = new Date(from);
     if (to) where.timestamp.lte = new Date(to);
 
-    const skip = (Math.max(1, Number(page)) - 1) * Math.max(1, Number(limit));
+    const take = Math.max(1, Math.min(1000, Number(limit)));
+    const skip = (Math.max(1, Number(page)) - 1) * take;
 
-    const logs = await prisma.auditLog.findMany({
-        where,
-        include: {
-            user: { select: { id: true, name: true, email: true, role: true } }
-        },
-        orderBy: { timestamp: 'desc' }, // confirmar nombre del campo en schema
-        skip,
-        take: Math.max(1, Math.min(1000, Number(limit)))
-    });
+    const [items, total] = await prisma.$transaction([
+        prisma.auditLog.findMany({
+            where,
+            include: {
+                user: { select: { id: true, name: true, email: true, role: true } }
+            },
+            orderBy: { timestamp: 'desc' },
+            skip,
+            take,
+        }),
+        prisma.auditLog.count({ where }),
+    ]);
 
-    return logs;
+    return { items, total, page: Math.max(1, Number(page)), pageSize: take };
 };
 
 module.exports = { logAudit, getAuditLogs };
