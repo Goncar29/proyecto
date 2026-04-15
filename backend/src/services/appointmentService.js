@@ -33,7 +33,11 @@ exports.getUserAppointments = async (userId, query = {}) => {
             orderBy: { timeBlock: { startTime: 'desc' } },
             skip,
             take,
-            include: { timeBlock: true },
+            include: {
+                timeBlock: true,
+                patient: { select: { id: true, name: true } },
+                doctor: { select: { id: true, name: true } },
+            },
         }),
     ]);
     return buildPage({ items, total, page, pageSize });
@@ -126,10 +130,80 @@ exports.cancelAppointment = async (appointmentId, caller, reason) => {
     });
 };
 
+exports.confirmAppointment = async (appointmentId, caller, notes) => {
+    const id = parseInt(appointmentId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const existing = await prisma.appointment.findUnique({ where: { id } });
+    if (!existing) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const role = caller.role?.toLowerCase();
+    const isDoctor = existing.doctorId === caller.id;
+    if (!isDoctor && role !== 'admin') {
+        const e = new Error('Forbidden');
+        e.status = 403; e.code = 'FORBIDDEN';
+        throw e;
+    }
+    if (existing.status !== 'PENDING') {
+        const e = new Error(`Cannot confirm an appointment in status ${existing.status}`);
+        e.status = 409; e.code = 'INVALID_STATE';
+        throw e;
+    }
+    return prisma.appointment.update({
+        where: { id },
+        data: {
+            status: 'CONFIRMED',
+            ...(notes !== undefined ? { notes } : {}),
+        },
+        include: { timeBlock: true },
+    });
+};
+
+exports.completeAppointment = async (appointmentId, caller, notes) => {
+    const id = parseInt(appointmentId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const existing = await prisma.appointment.findUnique({ where: { id } });
+    if (!existing) {
+        const e = new Error('Appointment not found');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+    const role = caller.role?.toLowerCase();
+    const isDoctor = existing.doctorId === caller.id;
+    if (!isDoctor && role !== 'admin') {
+        const e = new Error('Forbidden');
+        e.status = 403; e.code = 'FORBIDDEN';
+        throw e;
+    }
+    if (existing.status !== 'CONFIRMED') {
+        const e = new Error(`Cannot complete an appointment in status ${existing.status}`);
+        e.status = 409; e.code = 'INVALID_STATE';
+        throw e;
+    }
+    return prisma.appointment.update({
+        where: { id },
+        data: {
+            status: 'COMPLETED',
+            ...(notes !== undefined ? { notes } : {}),
+        },
+        include: { timeBlock: true },
+    });
+};
+
 exports.updateAppointment = async (id, data) => {
     try {
         const allowed = {};
-        if (data.status !== undefined) allowed.status = data.status;
+        // status intentionally excluded — use PATCH /:id/confirm, /complete, or /cancel
         if (data.notes !== undefined) allowed.notes = data.notes;
         if (data.reason !== undefined) allowed.reason = data.reason;
 

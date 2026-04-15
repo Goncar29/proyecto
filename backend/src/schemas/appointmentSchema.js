@@ -25,8 +25,18 @@ const cancelAppointmentSchema = Joi.object({
     reason: Joi.string().max(500).optional(),
 });
 
+const confirmAppointmentSchema = Joi.object({
+    notes: Joi.string().max(500).optional(),
+});
+
+const completeAppointmentSchema = Joi.object({
+    notes: Joi.string().max(500).optional(),
+});
+
 module.exports = {
     createAppointmentSchema,
     listAppointmentsQuerySchema,
     cancelAppointmentSchema,
+    confirmAppointmentSchema,
+    completeAppointmentSchema,
 };

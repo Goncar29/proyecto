@@ -7,6 +7,8 @@ const {
     createAppointmentSchema,
     listAppointmentsQuerySchema,
     cancelAppointmentSchema,
+    confirmAppointmentSchema,
+    completeAppointmentSchema,
 } = require('../schemas/appointmentSchema');
 
 // mergeParams: inherit :id from parent /api/users/:id/appointments mount.
@@ -37,6 +39,24 @@ router.patch(
     validate(cancelAppointmentSchema),
     auditMiddleware('Cancelar cita'),
     appointmentController.cancelAppointment,
+);
+
+router.patch(
+    '/:id/confirm',
+    authenticateToken,
+    authorizeRole(['doctor', 'admin']),
+    validate(confirmAppointmentSchema),
+    auditMiddleware('Confirmar cita'),
+    appointmentController.confirmAppointment,
+);
+
+router.patch(
+    '/:id/complete',
+    authenticateToken,
+    authorizeRole(['doctor', 'admin']),
+    validate(completeAppointmentSchema),
+    auditMiddleware('Completar cita'),
+    appointmentController.completeAppointment,
 );
 
 router.put(

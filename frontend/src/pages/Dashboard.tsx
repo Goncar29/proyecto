@@ -21,15 +21,36 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  const updateLocalStatus = (id: number, status: Appointment['status']) =>
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+
   const handleCancel = async (id: number) => {
     try {
       await api.patch(`/appointments/${id}/cancel`);
-      setAppointments(prev =>
-        prev.map(a => a.id === id ? { ...a, status: 'CANCELLED' as const } : a)
-      );
+      updateLocalStatus(id, 'CANCELLED');
       toast('Cita cancelada', 'success');
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : 'Error al cancelar', 'error');
+    }
+  };
+
+  const handleConfirm = async (id: number) => {
+    try {
+      await api.patch(`/appointments/${id}/confirm`);
+      updateLocalStatus(id, 'CONFIRMED');
+      toast('Cita confirmada', 'success');
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : 'Error al confirmar', 'error');
+    }
+  };
+
+  const handleComplete = async (id: number) => {
+    try {
+      await api.patch(`/appointments/${id}/complete`);
+      updateLocalStatus(id, 'COMPLETED');
+      toast('Cita completada', 'success');
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : 'Error al completar', 'error');
     }
   };
 
@@ -39,6 +60,9 @@ export default function Dashboard() {
     CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   };
+
+  const isPastAppointment = (a: Appointment) =>
+    a.timeBlock ? new Date(a.timeBlock.endTime) < new Date() : false;
 
   return (
     <div>
@@ -54,21 +78,42 @@ export default function Dashboard() {
         <div className="space-y-3">
           {appointments.map(a => (
             <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
                     Cita #{a.id}
                     {a.timeBlock && (
                       <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
-                        {new Date(a.timeBlock.date).toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(a.timeBlock.date + 'T00:00:00').toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </p>
-                  <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] ?? ''}`}>
-                    {a.status}
-                  </span>
+                  {/* Participant info — show the other party */}
+                  {user?.role === 'DOCTOR' && a.patient && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Paciente: <span className="font-medium text-gray-700 dark:text-gray-300">{a.patient.name}</span>
+                    </p>
+                  )}
+                  {user?.role === 'PATIENT' && a.doctor && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Doctor: <span className="font-medium text-gray-700 dark:text-gray-300">{a.doctor.name}</span>
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] ?? ''}`}>
+                      {a.status}
+                    </span>
+                    {/* Lazy nudge: confirmed appointment whose time has already passed */}
+                    {a.status === 'CONFIRMED' && isPastAppointment(a) && user?.role === 'DOCTOR' && (
+                      <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
+                        Horario pasado — marcá como completada
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Review button — patient, completed appointment, not yet reviewed */}
                   {a.status === 'COMPLETED' && user?.role === 'PATIENT' && !reviewed.has(a.id) && (
                     <button
                       onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)}
@@ -80,6 +125,26 @@ export default function Dashboard() {
                   {reviewed.has(a.id) && (
                     <span className="text-sm text-green-600 dark:text-green-400">Review enviada</span>
                   )}
+
+                  {/* Doctor actions */}
+                  {a.status === 'PENDING' && user?.role === 'DOCTOR' && (
+                    <button
+                      onClick={() => handleConfirm(a.id)}
+                      className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 border border-green-200 dark:border-green-700 px-3 py-1 rounded-lg"
+                    >
+                      Confirmar
+                    </button>
+                  )}
+                  {a.status === 'CONFIRMED' && user?.role === 'DOCTOR' && (
+                    <button
+                      onClick={() => handleComplete(a.id)}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
+                    >
+                      Completar
+                    </button>
+                  )}
+
+                  {/* Cancel — available to both roles while not terminal */}
                   {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
                     <button
                       onClick={() => handleCancel(a.id)}
@@ -90,6 +155,7 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+
               {reviewingId === a.id && (
                 <ReviewForm
                   doctorId={a.doctorId}

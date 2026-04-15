@@ -38,6 +38,8 @@ export interface Appointment {
   reason?: string;
   notes?: string;
   timeBlock?: TimeBlock;
+  patient?: { id: number; name: string };
+  doctor?: { id: number; name: string };
 }
 
 export interface Review {
