@@ -84,7 +84,7 @@ export default function Dashboard() {
                     Cita #{a.id}
                     {a.timeBlock && (
                       <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
-                        {new Date(a.timeBlock.date + 'T00:00:00').toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(a.timeBlock.date).toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </p>

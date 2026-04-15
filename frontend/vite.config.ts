@@ -4,11 +4,15 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { config } from 'dotenv'
 
-// Load .env from repo root (one level up from frontend/)
-config({ path: path.resolve(__dirname, '../.env') })
+// Load .env from repo root (one level up from frontend/).
+// override: true — ensures BACKEND_PORT from .env wins over any PORT injected by
+// tooling (e.g. preview servers that set PORT to the frontend port).
+config({ path: path.resolve(__dirname, '../.env'), override: true })
 
-const backendPort = process.env.PORT ?? '3006'
-const backendTarget = `http://localhost:${backendPort}`
+// Use 127.0.0.1 explicitly — on Windows + Node 18+, 'localhost' triggers dual-stack
+// (IPv4 + IPv6) resolution in internalConnectMultiple which causes EADDRINUSE errors.
+const backendPort = process.env.BACKEND_PORT ?? process.env.PORT ?? '3006'
+const backendTarget = `http://127.0.0.1:${backendPort}`
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
