@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/api/client';
 import { CardSkeleton } from '@/components/Skeleton';
+import DoctorAvatar from '@/components/DoctorAvatar';
+
 interface DoctorListItem {
   id: number;
   name: string;
@@ -26,7 +28,6 @@ export default function Doctors() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Debounce: espera 300ms después del último keystroke
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
@@ -63,18 +64,23 @@ export default function Doctors() {
             <Link
               key={d.id}
               to={`/doctors/${d.id}`}
-              className="block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition-shadow"
+              className="flex gap-4 items-start bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition-shadow"
             >
-              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                {d.name}
-              </h3>
-              <p className="text-blue-600 dark:text-blue-400 text-sm mt-1">{d.specialty}</p>
-              {d.location && <p className="text-gray-500 dark:text-gray-400 text-sm">{d.location}</p>}
-              <div className="flex items-center gap-2 mt-3">
-                <span className="text-yellow-500">{'★'.repeat(Math.round(d.avgRating))}</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {d.avgRating.toFixed(1)} ({d.reviewCount})
-                </span>
+              <DoctorAvatar name={d.name} photoUrl={d.photoUrl} size="md" />
+              <div className="min-w-0">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-lg leading-tight truncate">
+                  {d.name}
+                </h3>
+                <p className="text-blue-600 dark:text-blue-400 text-sm mt-0.5">{d.specialty}</p>
+                {d.location && (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm truncate">{d.location}</p>
+                )}
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className="text-yellow-500 text-sm">{'★'.repeat(Math.round(d.avgRating))}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {d.avgRating.toFixed(1)} ({d.reviewCount})
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
