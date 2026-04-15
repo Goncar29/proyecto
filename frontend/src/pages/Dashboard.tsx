@@ -6,20 +6,34 @@ import { ListSkeleton } from '@/components/Skeleton';
 import ReviewForm from '@/components/ReviewForm';
 import type { Appointment, PaginatedResponse } from '@/types';
 
+const PAGE_SIZE = 10;
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const [reviewed, setReviewed] = useState<Set<number>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const isDoctor = user?.role === 'DOCTOR';
 
   useEffect(() => {
     if (!user) return;
-    api.get<PaginatedResponse<Appointment>>(`/users/${user.id}/appointments`)
-      .then(res => setAppointments(res.items))
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+    if (statusFilter) params.set('status', statusFilter);
+    api.get<PaginatedResponse<Appointment>>(`/users/${user.id}/appointments?${params}`)
+      .then(res => {
+        setAppointments(res.items);
+        setTotal(res.total);
+      })
       .finally(() => setLoading(false));
-  }, [user]);
+  }, [user, page, statusFilter]);
 
   const updateLocalStatus = (id: number, status: Appointment['status']) =>
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -55,10 +69,14 @@ export default function Dashboard() {
   };
 
   const statusColor: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    PENDING:   'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
     CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  };
+
+  const statusLabel: Record<string, string> = {
+    PENDING: 'Pendiente', CONFIRMED: 'Confirmada', CANCELLED: 'Cancelada', COMPLETED: 'Completada',
   };
 
   const isPastAppointment = (a: Appointment) =>
@@ -66,109 +84,176 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">Bienvenido, {user?.name} ({user?.role})</p>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+        {isDoctor ? 'Mi agenda' : 'Dashboard'}
+      </h1>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">
+        {isDoctor
+          ? `Dr. ${user?.name} — gestioná tus citas`
+          : `Bienvenido, ${user?.name}`}
+      </p>
 
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Mis citas</h2>
+      {/* Filters + count row */}
+      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {isDoctor ? 'Citas de pacientes' : 'Mis citas'}
+          {total > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+              ({total} en total)
+            </span>
+          )}
+        </h2>
+        <select
+          value={statusFilter}
+          onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+          className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos los estados</option>
+          <option value="PENDING">Pendiente</option>
+          <option value="CONFIRMED">Confirmada</option>
+          <option value="COMPLETED">Completada</option>
+          <option value="CANCELLED">Cancelada</option>
+        </select>
+      </div>
+
       {loading ? (
         <ListSkeleton count={4} />
       ) : appointments.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">No tenés citas registradas.</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          {statusFilter ? 'No hay citas con ese estado.' : 'No tenés citas registradas.'}
+        </p>
       ) : (
-        <div className="space-y-3">
-          {appointments.map(a => (
-            <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    Cita #{a.id}
-                    {a.timeBlock && (
-                      <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
-                        {new Date(a.timeBlock.date).toLocaleDateString()} — {new Date(a.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+        <>
+          <div className="space-y-3">
+            {appointments.map(a => (
+              <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      Cita #{a.id}
+                      {a.timeBlock && (
+                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
+                          {new Date(a.timeBlock.date).toLocaleDateString('es-AR')}
+                          {' — '}
+                          {new Date(a.timeBlock.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                          {' - '}
+                          {new Date(a.timeBlock.endTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </p>
+
+                    {/* Participant info — show the other party */}
+                    {isDoctor && a.patient && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        Paciente:{' '}
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{a.patient.name}</span>
+                      </p>
                     )}
-                  </p>
-                  {/* Participant info — show the other party */}
-                  {user?.role === 'DOCTOR' && a.patient && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      Paciente: <span className="font-medium text-gray-700 dark:text-gray-300">{a.patient.name}</span>
-                    </p>
-                  )}
-                  {user?.role === 'PATIENT' && a.doctor && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      Doctor: <span className="font-medium text-gray-700 dark:text-gray-300">{a.doctor.name}</span>
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] ?? ''}`}>
-                      {a.status}
-                    </span>
-                    {/* Lazy nudge: confirmed appointment whose time has already passed */}
-                    {a.status === 'CONFIRMED' && isPastAppointment(a) && user?.role === 'DOCTOR' && (
-                      <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
-                        Horario pasado — marcá como completada
+                    {!isDoctor && a.doctor && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        Doctor:{' '}
+                        <span className="font-medium text-gray-700 dark:text-gray-300">{a.doctor.name}</span>
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] ?? ''}`}>
+                        {statusLabel[a.status] ?? a.status}
                       </span>
+                      {a.status === 'CONFIRMED' && isPastAppointment(a) && isDoctor && (
+                        <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
+                          Horario pasado — marcá como completada
+                        </span>
+                      )}
+                      {a.notes && (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                          Nota: {a.notes}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Review — patient, completed, not yet reviewed */}
+                    {a.status === 'COMPLETED' && !isDoctor && !reviewed.has(a.id) && (
+                      <button
+                        onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
+                      >
+                        {reviewingId === a.id ? 'Cerrar' : 'Dejar review'}
+                      </button>
+                    )}
+                    {reviewed.has(a.id) && (
+                      <span className="text-sm text-green-600 dark:text-green-400">Review enviada</span>
+                    )}
+
+                    {/* Doctor actions */}
+                    {a.status === 'PENDING' && isDoctor && (
+                      <button
+                        onClick={() => handleConfirm(a.id)}
+                        className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 border border-green-200 dark:border-green-700 px-3 py-1 rounded-lg"
+                      >
+                        Confirmar
+                      </button>
+                    )}
+                    {a.status === 'CONFIRMED' && isDoctor && (
+                      <button
+                        onClick={() => handleComplete(a.id)}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
+                      >
+                        Completar
+                      </button>
+                    )}
+
+                    {/* Cancel — both roles, while not terminal */}
+                    {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
+                      <button
+                        onClick={() => handleCancel(a.id)}
+                        className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-700 px-3 py-1 rounded-lg"
+                      >
+                        Cancelar
+                      </button>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Review button — patient, completed appointment, not yet reviewed */}
-                  {a.status === 'COMPLETED' && user?.role === 'PATIENT' && !reviewed.has(a.id) && (
-                    <button
-                      onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
-                    >
-                      {reviewingId === a.id ? 'Cerrar' : 'Dejar review'}
-                    </button>
-                  )}
-                  {reviewed.has(a.id) && (
-                    <span className="text-sm text-green-600 dark:text-green-400">Review enviada</span>
-                  )}
-
-                  {/* Doctor actions */}
-                  {a.status === 'PENDING' && user?.role === 'DOCTOR' && (
-                    <button
-                      onClick={() => handleConfirm(a.id)}
-                      className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 border border-green-200 dark:border-green-700 px-3 py-1 rounded-lg"
-                    >
-                      Confirmar
-                    </button>
-                  )}
-                  {a.status === 'CONFIRMED' && user?.role === 'DOCTOR' && (
-                    <button
-                      onClick={() => handleComplete(a.id)}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
-                    >
-                      Completar
-                    </button>
-                  )}
-
-                  {/* Cancel — available to both roles while not terminal */}
-                  {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
-                    <button
-                      onClick={() => handleCancel(a.id)}
-                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-700 px-3 py-1 rounded-lg"
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                </div>
+                {reviewingId === a.id && (
+                  <ReviewForm
+                    doctorId={a.doctorId}
+                    appointmentId={a.id}
+                    onSuccess={() => {
+                      setReviewingId(null);
+                      setReviewed(prev => new Set(prev).add(a.id));
+                    }}
+                  />
+                )}
               </div>
+            ))}
+          </div>
 
-              {reviewingId === a.id && (
-                <ReviewForm
-                  doctorId={a.doctorId}
-                  appointmentId={a.id}
-                  onSuccess={() => {
-                    setReviewingId(null);
-                    setReviewed(prev => new Set(prev).add(a.id));
-                  }}
-                />
-              )}
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <button
+                onClick={() => setPage(p => p - 1)}
+                disabled={page === 1}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Página {page} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={page === totalPages}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              >
+                Siguiente →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
