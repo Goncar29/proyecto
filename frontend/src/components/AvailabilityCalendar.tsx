@@ -26,7 +26,9 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
   const [viewMonth, setViewMonth] = React.useState(today.getMonth());
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
 
-  // Build a set of available dates (YYYY-MM-DD)
+  // Build a set of available dates (YYYY-MM-DD).
+  // Backend stores TimeBlock.date as UTC midnight (date.setUTCHours(0,0,0,0)),
+  // so splitting on 'T' always yields the correct local calendar date.
   const availableDates = new Set(
     slots.map(s => s.date.split('T')[0])
   );
@@ -82,6 +84,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const isAvailable = availableDates.has(dateStr);
             const isSelected = selectedDate === dateStr;
+            // Append local midnight to compare calendar day (not UTC offset).
             const isPast = new Date(dateStr + 'T00:00:00') < new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
             return (
