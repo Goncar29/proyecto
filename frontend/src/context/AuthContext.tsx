@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.post<{ token: string }>('/auth/login', { email, password });
     localStorage.setItem('token', res.token);
     setToken(res.token);
+    // Fetch user data immediately so Dashboard sees user when navigated to
+    const userData = await api.get<User>('/auth/me');
+    setUser(userData);
   };
 
   const register = async (name: string, email: string, password: string) => {
