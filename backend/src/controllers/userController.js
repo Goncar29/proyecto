@@ -1,7 +1,7 @@
 const { updateUserService } = require('../services/userService');
 const { validateEmail, validateName, validatePassword } = require('../utils/validations');
 
-const updateUser = async (req, res) => {
+const updateUser = async (req, res, next) => {
     // Autenticación
     if (!req.user) return res.status(401).json({ error: 'No autenticado.' });
 
