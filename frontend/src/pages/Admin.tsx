@@ -3,9 +3,10 @@ import { api } from '@/api/client';
 import { useToast } from '@/context/ToastContext';
 import TimeBlocksPanel from '@/components/admin/TimeBlocksPanel';
 import AuditLogsPanel from '@/components/admin/AuditLogsPanel';
+import ReservationsPanel from '@/components/admin/ReservationsPanel';
 import type { AdminUser, PaginatedResponse } from '@/types';
 
-type Tab = 'users' | 'timeblocks' | 'audit';
+type Tab = 'users' | 'timeblocks' | 'audit' | 'reservations';
 
 const PAGE_SIZE = 20;
 
@@ -67,6 +68,7 @@ export default function Admin() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'users', label: 'Usuarios' },
     { key: 'timeblocks', label: 'Bloques de tiempo' },
+    { key: 'reservations', label: 'Reservaciones' },
     { key: 'audit', label: 'Auditoría' },
   ];
 
@@ -184,6 +186,7 @@ export default function Admin() {
       )}
 
       {tab === 'timeblocks' && <TimeBlocksPanel />}
+      {tab === 'reservations' && <ReservationsPanel />}
       {tab === 'audit' && <AuditLogsPanel />}
     </div>
   );
