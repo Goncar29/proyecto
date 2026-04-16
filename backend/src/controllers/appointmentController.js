@@ -20,7 +20,7 @@ exports.getUserAppointments = async (req, res, next) => {
     }
 };
 
-exports.createAppointment = async (req, res) => {
+exports.createAppointment = async (req, res, next) => {
     try {
         const appointmentData = {
             ...req.body,
@@ -29,7 +29,7 @@ exports.createAppointment = async (req, res) => {
         const appointment = await appointmentService.createAppointment(appointmentData);
         return res.status(201).json(appointment);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return next(error);
     }
 };
 
