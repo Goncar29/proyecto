@@ -10,9 +10,13 @@ async function authenticateToken(req, res, next) {
     jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
 
+        // DB lookup on every request is intentional: a user suspended or soft-deleted
+        // after token issuance is rejected immediately without waiting for JWT expiry.
+        // Do NOT replace this with a cache — it would allow suspended users to keep
+        // acting on their existing token until it expires.
         const user = await prisma.user.findUnique({ where: { id: decoded.id } });
         if (!user || user.deletedAt || !user.isActive || user.isSuspended) {
-            return res.status(401).json({ error: 'Account inactive or suspended' });
+            return res.status(401).json({ error: 'Cuenta inactiva o suspendida' });
         }
 
         req.user = decoded;
