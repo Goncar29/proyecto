@@ -55,8 +55,8 @@ exports.updateTimeBlock = async (req, res, next) => {
         }
 
         // Validar que el doctor sea dueño del bloque
-        if (req.user.role === 'doctor' && block.doctorId !== req.user.id) {
-            return res.status(403).json({ error: 'Access denied' });
+        if (req.user.role?.toLowerCase() === 'doctor' && block.doctorId !== req.user.id) {
+            return res.status(403).json({ error: 'Acceso denegado' });
         }
 
         const updated = await prisma.timeBlock.update({
@@ -81,8 +81,8 @@ exports.deleteTimeBlock = async (req, res, next) => {
         }
 
         // Validar que el doctor sea dueño
-        if (req.user.role === 'doctor' && block.doctorId !== req.user.id) {
-            return res.status(403).json({ error: 'Access denied' });
+        if (req.user.role?.toLowerCase() === 'doctor' && block.doctorId !== req.user.id) {
+            return res.status(403).json({ error: 'Acceso denegado' });
         }
 
         await prisma.timeBlock.delete({ where: { id } });
