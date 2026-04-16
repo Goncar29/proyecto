@@ -32,6 +32,7 @@ interface ReviewItem {
   id: number;
   rating: number;
   text: string;
+  helpfulCount: number;
   createdAt: string;
   patient: { id: number; name: string };
 }
@@ -55,6 +56,8 @@ export default function DoctorDetailPage() {
   const [booking, setBooking] = useState<number | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  const [userVotes, setUserVotes] = useState<Record<number, 1 | -1 | null>>({});
+  const [voting, setVoting] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -70,6 +73,20 @@ export default function DoctorDetailPage() {
         setDoctor(doc);
         setSlots(avail);
         setReviews(rev.items);
+        // Fetch user's existing votes if logged in as patient
+        if (user?.role === 'PATIENT' && rev.items.length > 0) {
+          Promise.all(
+            rev.items.map(r =>
+              api.get<{ userVote: 1 | -1 | null }>(`/doctors/${id}/reviews/${r.id}/my-vote`)
+                .then(res => ({ id: r.id, vote: res.userVote }))
+                .catch(() => ({ id: r.id, vote: null as null }))
+            )
+          ).then(votes => {
+            const map: Record<number, 1 | -1 | null> = {};
+            votes.forEach(v => { map[v.id] = v.vote; });
+            setUserVotes(map);
+          });
+        }
       })
       .catch(() => setError('No se pudo cargar la información del doctor. Verificá tu conexión e intentá de nuevo.'))
       .finally(() => setLoading(false));
@@ -95,6 +112,23 @@ export default function DoctorDetailPage() {
       toast(err instanceof Error ? err.message : 'Error al reservar', 'error');
     } finally {
       setBooking(null);
+    }
+  };
+
+  const handleVote = async (reviewId: number, value: 1 | -1) => {
+    if (!user) { navigate('/login'); return; }
+    setVoting(reviewId);
+    try {
+      const res = await api.post<{ reviewId: number; helpfulCount: number; userVote: 1 | -1 | null }>(
+        `/doctors/${id}/reviews/${reviewId}/vote`,
+        { value }
+      );
+      setUserVotes(prev => ({ ...prev, [reviewId]: res.userVote }));
+      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, helpfulCount: res.helpfulCount } : r));
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : 'Error al votar', 'error');
+    } finally {
+      setVoting(null);
     }
   };
 
@@ -144,18 +178,57 @@ export default function DoctorDetailPage() {
         <>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">Reviews</h2>
           <div className="space-y-3">
-            {reviews.map(r => (
-              <div key={r.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{r.patient.name}</span>
+            {reviews.map(r => {
+              const myVote = userVotes[r.id] ?? null;
+              const isVoting = voting === r.id;
+              return (
+                <div key={r.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{r.patient.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</span>
+                  {r.text && <p className="text-gray-700 dark:text-gray-300 mb-2">{r.text}</p>}
+                  {/* Voting — only visible to patients */}
+                  {user?.role === 'PATIENT' && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={() => handleVote(r.id, 1)}
+                        disabled={isVoting}
+                        title="Útil"
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors disabled:opacity-50 ${
+                          myVote === 1
+                            ? 'bg-blue-100 border-blue-300 text-blue-700 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        👍 <span>{r.helpfulCount}</span>
+                      </button>
+                      <button
+                        onClick={() => handleVote(r.id, -1)}
+                        disabled={isVoting}
+                        title="No útil"
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors disabled:opacity-50 ${
+                          myVote === -1
+                            ? 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        👎
+                      </button>
+                    </div>
+                  )}
+                  {/* Show count to non-patients too */}
+                  {user?.role !== 'PATIENT' && r.helpfulCount > 0 && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                      {r.helpfulCount} {r.helpfulCount === 1 ? 'persona encontró esto útil' : 'personas encontraron esto útil'}
+                    </p>
+                  )}
                 </div>
-                {r.text && <p className="text-gray-700 dark:text-gray-300">{r.text}</p>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
