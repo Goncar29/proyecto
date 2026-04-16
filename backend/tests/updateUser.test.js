@@ -123,7 +123,8 @@ describe('PUT /api/users/:id — validaciones', () => {
             .set('Authorization', `Bearer ${tokens.patient}`)
             .send({});
         expect(res.status).toBe(400);
-        expect(res.body.error).toBeDefined();
+        // validate middleware returns { message, details[] } — not { error }
+        expect(res.body.message).toBeDefined();
     });
 
     it('email con formato inválido → 400', async () => {
