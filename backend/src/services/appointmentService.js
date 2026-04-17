@@ -119,7 +119,11 @@ exports.cancelAppointment = async (appointmentId, caller, reason) => {
             status: 'CANCELLED',
             ...(reason !== undefined ? { reason } : {}),
         },
-        include: { timeBlock: true },
+        include: {
+            timeBlock: true,
+            patient: { select: { id: true, name: true, email: true } },
+            doctor:  { select: { id: true, name: true, email: true } },
+        },
     });
 };
 
@@ -154,7 +158,11 @@ exports.confirmAppointment = async (appointmentId, caller, notes) => {
             status: 'CONFIRMED',
             ...(notes !== undefined ? { notes } : {}),
         },
-        include: { timeBlock: true },
+        include: {
+            timeBlock: true,
+            patient: { select: { id: true, name: true, email: true } },
+            doctor:  { select: { id: true, name: true, email: true } },
+        },
     });
 };
 

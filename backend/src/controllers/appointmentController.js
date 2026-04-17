@@ -1,4 +1,5 @@
 const appointmentService = require('../services/appointmentService');
+const { sendAppointmentConfirmedEmail, sendAppointmentCancelledEmail } = require('../utils/email');
 
 exports.getUserAppointments = async (req, res, next) => {
     try {
@@ -40,6 +41,32 @@ exports.cancelAppointment = async (req, res, next) => {
             req.user,
             req.body?.reason,
         );
+
+        // Notificar a la otra parte (fire-and-forget — no bloquea la respuesta)
+        const callerRole = req.user.role?.toLowerCase();
+        const cancelledBy = callerRole === 'patient' ? 'patient' : 'doctor';
+        if (cancelledBy === 'doctor') {
+            // Doctor cancela → avisa al paciente
+            sendAppointmentCancelledEmail({
+                toEmail: appt.patient.email,
+                toName: appt.patient.name,
+                otherPartyName: appt.doctor.name,
+                startTime: appt.timeBlock.startTime,
+                cancelledBy: 'doctor',
+                reason: appt.reason,
+            }).catch(() => {});
+        } else if (cancelledBy === 'patient') {
+            // Paciente cancela → avisa al doctor
+            sendAppointmentCancelledEmail({
+                toEmail: appt.doctor.email,
+                toName: appt.doctor.name,
+                otherPartyName: appt.patient.name,
+                startTime: appt.timeBlock.startTime,
+                cancelledBy: 'patient',
+                reason: appt.reason,
+            }).catch(() => {});
+        }
+
         return res.status(200).json(appt);
     } catch (error) {
         return next(error);
@@ -53,6 +80,15 @@ exports.confirmAppointment = async (req, res, next) => {
             req.user,
             req.body?.notes,
         );
+
+        // Notificar al paciente (fire-and-forget)
+        sendAppointmentConfirmedEmail({
+            patientEmail: appt.patient.email,
+            patientName:  appt.patient.name,
+            doctorName:   appt.doctor.name,
+            startTime:    appt.timeBlock.startTime,
+        }).catch(() => {});
+
         return res.status(200).json(appt);
     } catch (error) {
         return next(error);
