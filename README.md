@@ -7,9 +7,10 @@ Aplicación full-stack para la gestión de turnos médicos. Permite a pacientes 
 | Capa | Tecnología |
 |------|------------|
 | Backend | Node.js + Express 5, Prisma ORM, PostgreSQL |
-| Frontend | Vite + React 18 + TypeScript, Tailwind CSS v4 |
+| Frontend | Vite + React 19 + TypeScript, Tailwind CSS v4 |
 | Auth | JWT (roles: PATIENT, DOCTOR, ADMIN) |
 | Validación | Joi (backend), TypeScript (frontend) |
+| Storage | Cloudinary (fotos de perfil de doctores) |
 | Deploy | Docker multi-stage + docker-compose |
 
 ## Estructura del monorepo
@@ -72,13 +73,16 @@ docker-compose up --build
 - Reserva de turnos con motivo opcional
 - Dashboard con citas activas y posibilidad de cancelar
 - Sistema de reviews con rating (1–5 estrellas)
+- Votar reviews de otros pacientes (👍 útil / 👎 no útil) con toggle
 
 ### Para doctores
-- Ver turnos reservados
-- Confirmar o cancelar citas
+- Ver turnos reservados y confirmar o cancelar citas
+- Editar perfil profesional (bio, hospital, ubicación, especialidades)
+- Subir foto de perfil (Cloudinary, JPG/PNG/WebP, máx 5 MB)
 
 ### Para administradores
-- Panel con tabs: Usuarios / Bloques de tiempo / Auditoría
+- Panel con tabs: Usuarios / Reservaciones / Bloques de tiempo / Auditoría
+- Ver todas las reservaciones con filtros por estado y búsqueda
 - Crear y eliminar bloques de disponibilidad por doctor
 - Ver y gestionar usuarios (activar/suspender/eliminar)
 - Log de auditoría paginado y filtrable
@@ -115,6 +119,16 @@ docker-compose up --build
 | PATCH | `/appointments/:id/cancel` | propio |
 | POST | `/appointments/:id/reviews` | patient |
 
+### Doctores — `/api/doctors`
+
+| Método | Endpoint | Roles |
+|--------|----------|-------|
+| PATCH | `/me/profile` | doctor |
+| POST | `/me/photo` | doctor — multipart, sube foto a Cloudinary |
+| POST | `/:id/reviews` | patient |
+| POST | `/:id/reviews/:reviewId/vote` | patient — toggle 1/-1 |
+| GET | `/:id/reviews/:reviewId/my-vote` | patient |
+
 ### Admin — `/api/admin`
 
 | Método | Endpoint | Descripción |
@@ -122,6 +136,7 @@ docker-compose up --build
 | GET | `/users` | Listar usuarios |
 | PATCH | `/users/:id/status` | Activar/suspender |
 | DELETE | `/users/:id` | Soft-delete |
+| GET | `/reservations` | Listar todas las reservaciones |
 | GET | `/time-blocks` | Listar bloques |
 | POST | `/time-blocks` | Crear bloque |
 | DELETE | `/time-blocks/:id` | Eliminar bloque |
@@ -145,6 +160,10 @@ docker-compose up --build
 | `PORT` | No | `3006` |
 | `SALT_ROUNDS` | No | `10` |
 | `NODE_ENV` | No | `development` |
+| `CLOUDINARY_CLOUD_NAME` | Sí (upload fotos) | — |
+| `CLOUDINARY_API_KEY` | Sí (upload fotos) | — |
+| `CLOUDINARY_API_SECRET` | Sí (upload fotos) | — |
+| `UPLOAD_MAX_BYTES` | No | `5242880` (5 MB) |
 
 ---
 
