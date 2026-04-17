@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<DoctorProfile>>({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [tab, setTab] = useState<'upcoming' | 'history'>('upcoming');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [reviewingId, setReviewingId] = useState<number | null>(null);
@@ -38,7 +39,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
+    const now = new Date().toISOString();
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+    if (tab === 'upcoming') params.set('from', now);
+    else params.set('to', now);
     if (statusFilter) params.set('status', statusFilter);
     api.get<PaginatedResponse<Appointment>>(`/users/${user.id}/appointments?${params}`)
       .then(res => {
@@ -46,7 +50,7 @@ export default function Dashboard() {
         setTotal(res.total);
       })
       .finally(() => setLoading(false));
-  }, [user, page, statusFilter]);
+  }, [user, page, statusFilter, tab]);
 
   useEffect(() => {
     if (!user || user.role !== 'DOCTOR') return;
@@ -220,26 +224,45 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Tabs Próximos / Historial */}
+      <div className="flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
+        {(['upcoming', 'history'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => { setTab(t); setPage(1); setStatusFilter(''); }}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              tab === t
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            {t === 'upcoming' ? '📅 Próximas' : '🕐 Historial'}
+          </button>
+        ))}
+      </div>
+
       {/* Filters + count row */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {isDoctor ? 'Citas de pacientes' : 'Mis citas'}
-          {total > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-              ({total} en total)
-            </span>
-          )}
-        </h2>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {total > 0 ? `${total} cita${total !== 1 ? 's' : ''}` : ''}
+        </span>
         <select
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
           className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Todos los estados</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="CONFIRMED">Confirmada</option>
-          <option value="COMPLETED">Completada</option>
-          <option value="CANCELLED">Cancelada</option>
+          {tab === 'upcoming' ? (
+            <>
+              <option value="PENDING">Pendiente</option>
+              <option value="CONFIRMED">Confirmada</option>
+            </>
+          ) : (
+            <>
+              <option value="COMPLETED">Completada</option>
+              <option value="CANCELLED">Cancelada</option>
+            </>
+          )}
         </select>
       </div>
 
@@ -247,7 +270,11 @@ export default function Dashboard() {
         <ListSkeleton count={4} />
       ) : appointments.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400">
-          {statusFilter ? 'No hay citas con ese estado.' : 'No tenés citas registradas.'}
+          {statusFilter
+            ? 'No hay citas con ese estado.'
+            : tab === 'upcoming'
+              ? 'No tenés citas próximas.'
+              : 'No tenés citas en el historial.'}
         </p>
       ) : (
         <>
