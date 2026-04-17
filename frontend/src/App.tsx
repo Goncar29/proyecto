@@ -11,6 +11,7 @@ import Doctors from '@/pages/Doctors';
 import Dashboard from '@/pages/Dashboard';
 import DoctorDetail from '@/pages/DoctorDetail';
 import Admin from '@/pages/Admin';
+import DoctorProfilePage from '@/pages/DoctorProfile';
 
 export default function App() {
   return (
@@ -38,6 +39,14 @@ export default function App() {
                 element={
                   <ProtectedRoute roles={['ADMIN']}>
                     <Admin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor/profile"
+                element={
+                  <ProtectedRoute roles={['DOCTOR']}>
+                    <DoctorProfilePage />
                   </ProtectedRoute>
                 }
               />

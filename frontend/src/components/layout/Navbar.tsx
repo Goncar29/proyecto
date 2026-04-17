@@ -23,6 +23,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard" className={linkClass}>Dashboard</Link>
+              {user.role === 'DOCTOR' && <Link to="/doctor/profile" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Mi perfil</Link>}
               {user.role === 'ADMIN' && <Link to="/admin" className="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300">Admin</Link>}
               <span className="text-sm text-gray-500 dark:text-gray-400">{user.name}</span>
               <button onClick={logout} className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">Salir</button>
@@ -90,6 +91,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard" className={linkClass} onClick={() => setOpen(false)}>Dashboard</Link>
+              {user.role === 'DOCTOR' && <Link to="/doctor/profile" className="text-blue-600 dark:text-blue-400" onClick={() => setOpen(false)}>Mi perfil</Link>}
               {user.role === 'ADMIN' && <Link to="/admin" className="text-purple-600 dark:text-purple-400" onClick={() => setOpen(false)}>Admin</Link>}
               <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                 <span className="text-sm text-gray-500 dark:text-gray-400">{user.name}</span>

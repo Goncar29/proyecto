@@ -52,6 +52,33 @@ export const api = {
   post: <T>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
 
+  /**
+   * Multipart upload — do NOT set Content-Type manually.
+   * The browser adds it automatically with the correct boundary.
+   */
+  postFile: <T>(endpoint: string, formData: FormData) => {
+    const token = localStorage.getItem('token');
+    return fetch(`${BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: res.statusText }));
+        const message =
+          (Array.isArray(body.details) && body.details[0]) ||
+          body.error ||
+          body.message ||
+          'Upload failed';
+        const err = new Error(message) as Error & { status: number; code?: string };
+        err.status = res.status;
+        err.code = body.code;
+        throw err;
+      }
+      return res.json() as Promise<T>;
+    });
+  },
+
   patch: <T>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
 
