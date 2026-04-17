@@ -22,20 +22,48 @@ function buildCalendar(year: number, month: number) {
 
 export default function AvailabilityCalendar({ slots, booking, isPatient, onBook }: Props) {
   const today = new Date();
-  const [viewYear, setViewYear] = React.useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = React.useState(today.getMonth());
+
+  // Build map: YYYY-MM-DD → count of slots
+  const slotsByDate = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const s of slots) {
+      const d = s.date.split('T')[0];
+      map.set(d, (map.get(d) ?? 0) + 1);
+    }
+    return map;
+  }, [slots]);
+
+  // Derive initial month: jump to the first month that has available slots
+  const initialMonth = React.useMemo(() => {
+    if (slotsByDate.size === 0) return { year: today.getFullYear(), month: today.getMonth() };
+    const dates = [...slotsByDate.keys()].sort();
+    const first = new Date(dates[0] + 'T12:00:00');
+    const firstFuture = dates.find(d => new Date(d + 'T12:00:00') >= new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+    const target = firstFuture ? new Date(firstFuture + 'T12:00:00') : first;
+    return { year: target.getFullYear(), month: target.getMonth() };
+  }, [slotsByDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [viewYear, setViewYear] = React.useState(initialMonth.year);
+  const [viewMonth, setViewMonth] = React.useState(initialMonth.month);
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
 
+  // Sync initial month when slots load (avoids stale closure on first render)
+  React.useEffect(() => {
+    setViewYear(initialMonth.year);
+    setViewMonth(initialMonth.month);
+  }, [initialMonth.year, initialMonth.month]);
+
   // Build a set of available dates (YYYY-MM-DD).
-  // Backend stores TimeBlock.date as UTC midnight (date.setUTCHours(0,0,0,0)),
-  // so splitting on 'T' always yields the correct local calendar date.
-  const availableDates = new Set(
-    slots.map(s => s.date.split('T')[0])
-  );
+  const availableDates = slotsByDate;
 
   const { firstDay, daysInMonth } = buildCalendar(viewYear, viewMonth);
 
+  const isCurrentOrFutureMonth = viewYear > today.getFullYear() ||
+    (viewYear === today.getFullYear() && viewMonth >= today.getMonth());
+
   const prevMonth = () => {
+    if (!isCurrentOrFutureMonth) return;
+    if (viewYear === today.getFullYear() && viewMonth === today.getMonth()) return;
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
     else setViewMonth(m => m - 1);
     setSelectedDate(null);
@@ -45,6 +73,8 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
     else setViewMonth(m => m + 1);
     setSelectedDate(null);
   };
+
+  const canGoPrev = !(viewYear === today.getFullYear() && viewMonth === today.getMonth());
 
   const monthName = new Date(viewYear, viewMonth).toLocaleString('es-AR', { month: 'long', year: 'numeric' });
 
@@ -60,7 +90,11 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 max-w-sm">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <button onClick={prevMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">
+          <button
+            onClick={prevMonth}
+            disabled={!canGoPrev}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400 disabled:opacity-30 disabled:cursor-default"
+          >
             ‹
           </button>
           <span className="font-medium text-gray-900 dark:text-white capitalize">{monthName}</span>
@@ -77,30 +111,38 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
         </div>
 
         {/* Day cells */}
-        <div className="grid grid-cols-7 gap-y-1">
+        <div className="grid grid-cols-7 gap-y-2">
           {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const isAvailable = availableDates.has(dateStr);
+            const slotCount = availableDates.get(dateStr) ?? 0;
+            const isAvailable = slotCount > 0;
             const isSelected = selectedDate === dateStr;
             // Append local midnight to compare calendar day (not UTC offset).
             const isPast = new Date(dateStr + 'T00:00:00') < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const active = isAvailable && !isPast;
 
             return (
-              <button
-                key={day}
-                onClick={() => isAvailable && !isPast && setSelectedDate(isSelected ? null : dateStr)}
-                disabled={!isAvailable || isPast}
-                className={`
-                  h-8 w-8 mx-auto rounded-full text-sm transition-colors
-                  ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
-                  ${isAvailable && !isPast && !isSelected ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/50 font-medium' : ''}
-                  ${!isAvailable || isPast ? 'text-gray-300 dark:text-gray-600 cursor-default' : ''}
-                `}
-              >
-                {day}
-              </button>
+              <div key={day} className="flex flex-col items-center">
+                <button
+                  onClick={() => active && setSelectedDate(isSelected ? null : dateStr)}
+                  disabled={!active}
+                  className={`
+                    h-8 w-8 rounded-full text-sm transition-colors leading-none
+                    ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
+                    ${active && !isSelected ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/50 font-medium' : ''}
+                    ${!active ? 'text-gray-300 dark:text-gray-600 cursor-default' : ''}
+                  `}
+                >
+                  {day}
+                </button>
+                {active && (
+                  <span className={`text-[9px] leading-none mt-0.5 font-medium ${isSelected ? 'text-blue-300' : 'text-blue-500 dark:text-blue-400'}`}>
+                    {slotCount}
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>
@@ -152,7 +194,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
       )}
 
       {!selectedDate && availableDates.size > 0 && (
-        <p className="text-gray-400 dark:text-gray-500 text-sm">Seleccioná un día resaltado para ver los horarios.</p>
+        <p className="text-gray-400 dark:text-gray-500 text-sm">Seleccioná un día resaltado para ver los horarios disponibles.</p>
       )}
     </div>
   );
