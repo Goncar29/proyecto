@@ -85,10 +85,25 @@ const resetPasswordSchema = Joi.object({
         }),
 });
 
+const changePasswordSchema = Joi.object({
+    currentPassword: Joi.string().required()
+        .messages({
+            'string.empty': 'La contraseña actual es obligatoria.',
+            'any.required': 'La contraseña actual es obligatoria.',
+        }),
+    newPassword: Joi.string().min(8).max(100).required()
+        .messages({
+            'string.empty': 'La nueva contraseña es obligatoria.',
+            'string.min': 'La nueva contraseña debe tener al menos 8 caracteres.',
+            'any.required': 'La nueva contraseña es obligatoria.',
+        }),
+});
+
 module.exports = {
     registerSchema,
     loginSchema,
     updateUserSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
+    changePasswordSchema,
 };

@@ -1,4 +1,5 @@
-const { updateUserService } = require('../services/userService');
+const { updateUserService, changePasswordService } = require('../services/userService');
+const { logAudit } = require('../services/audit');
 
 const updateUser = async (req, res, next) => {
     const { id } = req.params;
@@ -28,4 +29,15 @@ const updateUser = async (req, res, next) => {
     }
 };
 
-module.exports = { updateUser };
+const changePassword = async (req, res, next) => {
+    const { currentPassword, newPassword } = req.body;
+    try {
+        await changePasswordService(req.user.id, currentPassword, newPassword);
+        await logAudit(req.user.id, 'password_changed');
+        return res.status(200).json({ message: 'Contraseña actualizada con éxito.' });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+module.exports = { updateUser, changePassword };

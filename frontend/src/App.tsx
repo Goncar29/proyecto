@@ -14,6 +14,7 @@ import Admin from '@/pages/Admin';
 import DoctorProfilePage from '@/pages/DoctorProfile';
 import ForgotPasswordPage from '@/pages/ForgotPassword';
 import ResetPasswordPage from '@/pages/ResetPassword';
+import SettingsPage from '@/pages/Settings';
 
 export default function App() {
   return (
@@ -26,6 +27,14 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/doctors" element={<Doctors />} />

@@ -30,4 +30,46 @@ const updateUserService = async (id, data) => {
     });
     return updated;
 };
-module.exports = { updateUserService };
+/**
+ * Cambia la contraseña del usuario autenticado.
+ * Verifica la contraseña actual antes de actualizar.
+ * Invalida todos los tokens de reset activos del usuario.
+ */
+const changePasswordService = async (userId, currentPassword, newPassword) => {
+    const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
+    if (!user) {
+        const err = new Error('Usuario no encontrado.');
+        err.status = 404;
+        throw err;
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+        const err = new Error('La contraseña actual es incorrecta.');
+        err.status = 400;
+        err.code = 'WRONG_CURRENT_PASSWORD';
+        throw err;
+    }
+
+    if (currentPassword === newPassword) {
+        const err = new Error('La nueva contraseña debe ser diferente a la actual.');
+        err.status = 400;
+        err.code = 'SAME_PASSWORD';
+        throw err;
+    }
+
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: Number(userId) },
+            data: { password: hashed },
+        }),
+        // Invalidar tokens de reset activos (seguridad)
+        prisma.passwordResetToken.deleteMany({
+            where: { userId: Number(userId), usedAt: null },
+        }),
+    ]);
+};
+
+module.exports = { updateUserService, changePasswordService };
