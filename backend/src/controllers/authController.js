@@ -1,4 +1,7 @@
 const { registerUser, loginUser, getCurrentUser } = require('../services/authService');
+const passwordResetService = require('../services/passwordResetService');
+
+const GENERIC_FORGOT_MESSAGE = 'Si el email existe, te enviamos un link de recuperación.';
 
 const register = async (req, res) => {
     try {
@@ -29,8 +32,32 @@ const me = async (req, res, next) => {
     }
 };
 
+const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        await passwordResetService.requestPasswordReset(email);
+        return res.status(200).json({ message: GENERIC_FORGOT_MESSAGE });
+    } catch (error) {
+        // Nunca revelamos al usuario si algo falló internamente.
+        require('../utils/logger').error({ err: error }, 'forgotPassword failed');
+        return res.status(200).json({ message: GENERIC_FORGOT_MESSAGE });
+    }
+};
+
+const resetPassword = async (req, res, next) => {
+    try {
+        const { token, newPassword } = req.body;
+        await passwordResetService.resetPassword(token, newPassword);
+        return res.status(200).json({ message: 'Contraseña actualizada con éxito.' });
+    } catch (error) {
+        return next(error);
+    }
+};
+
 module.exports = {
     register,
     login,
     me,
+    forgotPassword,
+    resetPassword,
 };

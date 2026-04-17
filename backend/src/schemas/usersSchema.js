@@ -59,8 +59,36 @@ const updateUserSchema = Joi.object({
         'object.min': 'Debés enviar al menos un campo para actualizar.',
     });
 
+const forgotPasswordSchema = Joi.object({
+    email: Joi.string().email({ tlds: false }).required()
+        .messages({
+            'string.empty': 'El email es obligatorio.',
+            'string.email': 'El email no tiene un formato válido.',
+            'any.required': 'El email es obligatorio.',
+        }),
+});
+
+const resetPasswordSchema = Joi.object({
+    token: Joi.string().hex().length(64).required()
+        .messages({
+            'string.empty': 'El token es obligatorio.',
+            'string.hex': 'Token inválido.',
+            'string.length': 'Token inválido.',
+            'any.required': 'El token es obligatorio.',
+        }),
+    newPassword: Joi.string().min(8).max(100).required()
+        .messages({
+            'string.empty': 'La nueva contraseña es obligatoria.',
+            'string.min': 'La contraseña debe tener al menos 8 caracteres.',
+            'string.max': 'La contraseña es demasiado larga.',
+            'any.required': 'La nueva contraseña es obligatoria.',
+        }),
+});
+
 module.exports = {
     registerSchema,
     loginSchema,
     updateUserSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
 };

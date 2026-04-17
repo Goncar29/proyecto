@@ -57,6 +57,11 @@ export default function Login() {
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
+      <p className="mt-3 text-right">
+        <Link to="/forgot-password" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </p>
       <p className="mt-4 text-gray-600 dark:text-gray-400">
         ¿No tenés cuenta? <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">Registrate</Link>
       </p>
