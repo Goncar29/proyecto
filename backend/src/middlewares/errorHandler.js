@@ -15,6 +15,18 @@ const PRISMA_ERROR_MAP = {
 };
 
 const errorHandler = (err, req, res, next) => {
+    // Multer errors (file upload)
+    const multer = require('multer');
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Archivo muy grande. El límite es 5 MB.', code: 'FILE_TOO_LARGE' });
+        }
+        return res.status(400).json({ error: err.message, code: 'UPLOAD_ERROR' });
+    }
+    if (err.message === 'INVALID_FILE_TYPE') {
+        return res.status(400).json({ error: 'Tipo de archivo no permitido. Usá JPG, PNG o WebP.', code: 'INVALID_FILE_TYPE' });
+    }
+
     // Joi validation
     if (err.isJoi) {
         return res.status(400).json({

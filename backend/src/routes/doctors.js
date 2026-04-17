@@ -4,6 +4,8 @@ const auditMiddleware = require('../middlewares/auditMiddleware');
 const validate = require('../middlewares/validate');
 const reviewsController = require('../controllers/reviewsController');
 const reviewVoteController = require('../controllers/reviewVoteController');
+const doctorPhotoController = require('../controllers/doctorPhotoController');
+const uploadImage = require('../middlewares/uploadImage');
 const { createReviewSchema } = require('../schemas/reviewsSchema');
 const { voteSchema } = require('../schemas/reviewVoteSchema');
 const { updateDoctorProfile } = require('../services/doctorProfileService');
@@ -14,6 +16,16 @@ const { updateDoctorProfileSchema } = require('../schemas/doctorProfileSchema');
  * Public read endpoints live under /api/public/doctors.
  */
 const router = Router();
+
+// POST /api/doctors/me/photo — doctor uploads their own profile photo
+router.post(
+    '/me/photo',
+    authenticateToken,
+    authorizeRole(['doctor']),
+    uploadImage.single('file'),
+    auditMiddleware('Subir foto de doctor'),
+    doctorPhotoController.uploadPhoto,
+);
 
 // PATCH /api/doctors/me/profile — doctor updates their own profile
 router.patch(
