@@ -100,6 +100,8 @@ docker-compose up --build
 | POST | `/auth/register` | No |
 | POST | `/auth/login` | No |
 | GET | `/auth/me` | JWT |
+| POST | `/auth/forgot-password` | No — respuesta genérica (enumeration prevention) |
+| POST | `/auth/reset-password` | No — token single-use, TTL 30 min |
 
 ### Doctores públicos — `/api/public/doctors`
 
