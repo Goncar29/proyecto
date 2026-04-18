@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { config } from 'dotenv'
+/// <reference types="vitest" />
 
 // Load .env from repo root (one level up from frontend/).
 // override: true — ensures BACKEND_PORT from .env wins over any PORT injected by
@@ -33,5 +34,10 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
   },
 })
