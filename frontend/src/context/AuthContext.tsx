@@ -25,10 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     api.get<User>('/auth/me')
-      .then(setUser)
+      .then((userData) => {
+        // Sync token state in case the interceptor silently refreshed it
+        const currentToken = localStorage.getItem('token');
+        if (currentToken && currentToken !== token) setToken(currentToken);
+        setUser(userData);
+      })
       .catch(() => {
-        localStorage.removeItem('token');
-        setToken(null);
+        // Only clear if the interceptor didn't already renew the token
+        if (!localStorage.getItem('token')) {
+          setToken(null);
+        }
+        setUser(null);
       })
       .finally(() => setLoading(false));
   }, [token]);
@@ -48,6 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Fire-and-forget: revoke server-side refresh token + clear httpOnly cookie
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);

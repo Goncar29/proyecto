@@ -40,6 +40,9 @@ model User {
   // Password reset
   passwordResetTokens PasswordResetToken[]
 
+  // Refresh tokens
+  refreshTokens RefreshToken[]
+
   @@index([role])
   @@index([isActive])
   @@index([deletedAt])
@@ -159,6 +162,20 @@ model ReviewVote {
 
   @@unique([reviewId, userId])
   @@index([userId])
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique  // sha256 del token plaintext
+  expiresAt DateTime
+  revokedAt DateTime?           // null = activo; seteado al logout o rotación
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model PasswordResetToken {

@@ -1,7 +1,17 @@
-const { registerUser, loginUser, getCurrentUser } = require('../services/authService');
+const { registerUser, loginUser, getCurrentUser, refreshAccessToken, logoutUser } = require('../services/authService');
 const passwordResetService = require('../services/passwordResetService');
+const { REFRESH_COOKIE_NAME, REFRESH_TOKEN_MAX_AGE_MS } = require('../config');
 
 const GENERIC_FORGOT_MESSAGE = 'Si el email existe, te enviamos un link de recuperación.';
+
+/** Cookie options — httpOnly keeps it out of JS; Secure in prod */
+const refreshCookieOptions = () => ({
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    path: '/api/auth',  // only sent to auth endpoints
+});
 
 const register = async (req, res) => {
     try {
@@ -16,11 +26,40 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const token = await loginUser(email, password);
-        return res.json({ message: 'Inicio de sesión exitoso', token });
+        const { accessToken, refreshTokenPlain } = await loginUser(email, password);
+        res.cookie(REFRESH_COOKIE_NAME, refreshTokenPlain, refreshCookieOptions());
+        return res.json({ message: 'Inicio de sesión exitoso', token: accessToken });
     } catch (error) {
         return res.status(401).json({ error: error.message || 'Usuario y/o contraseña incorrecta' });
     }
+};
+
+/**
+ * POST /auth/refresh
+ * Reads refresh token from httpOnly cookie, returns new access token + rotates cookie.
+ */
+const refresh = async (req, res) => {
+    try {
+        const refreshTokenPlain = req.cookies?.[REFRESH_COOKIE_NAME];
+        const { accessToken, refreshTokenPlain: newRefresh } = await refreshAccessToken(refreshTokenPlain);
+        res.cookie(REFRESH_COOKIE_NAME, newRefresh, refreshCookieOptions());
+        return res.json({ token: accessToken });
+    } catch (error) {
+        // Clear the invalid cookie
+        res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+        return res.status(401).json({ error: error.message || 'Sesión expirada', code: error.code || 'UNAUTHORIZED' });
+    }
+};
+
+/**
+ * POST /auth/logout
+ * Revokes the refresh token and clears the cookie.
+ */
+const logout = async (req, res) => {
+    const refreshTokenPlain = req.cookies?.[REFRESH_COOKIE_NAME];
+    await logoutUser(refreshTokenPlain);
+    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+    return res.json({ message: 'Sesión cerrada' });
 };
 
 const me = async (req, res, next) => {
@@ -57,6 +96,8 @@ const resetPassword = async (req, res, next) => {
 module.exports = {
     register,
     login,
+    refresh,
+    logout,
     me,
     forgotPassword,
     resetPassword,

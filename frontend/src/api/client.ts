@@ -2,6 +2,38 @@ const BASE_URL = '/api';
 
 type RequestOptions = RequestInit & { params?: Record<string, string> };
 
+// ── Refresh-token logic ────────────────────────────────────────────────────────
+// Only one refresh call at a time — concurrent 401s share the same promise.
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Try to get a new access token via the httpOnly-cookie refresh token.
+ * Returns the new access token, or null if the refresh fails.
+ */
+async function tryRefresh(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise; // deduplicate concurrent calls
+
+  refreshPromise = fetch(`${BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include', // send the httpOnly cookie
+  })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      const newToken: string | undefined = data.token;
+      if (newToken) localStorage.setItem('token', newToken);
+      return newToken ?? null;
+    })
+    .catch(() => null)
+    .finally(() => { refreshPromise = null; });
+
+  return refreshPromise;
+}
+
+/** Endpoints that should never trigger a refresh attempt */
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout'];
+
+// ── Core request function ──────────────────────────────────────────────────────
 async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<T> {
   const { params, headers, ...rest } = opts;
 
@@ -14,6 +46,7 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
   const token = localStorage.getItem('token');
 
   const res = await fetch(url, {
+    credentials: 'include', // always include cookies (refresh token cookie)
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -23,16 +56,36 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
   });
 
   if (!res.ok) {
-    // 401 outside of auth endpoints → session expired, redirect to login
-    if (
-      res.status === 401 &&
-      !endpoint.startsWith('/auth/login') &&
-      !endpoint.startsWith('/auth/register')
-    ) {
-      localStorage.removeItem('token');
-      window.location.href = '/login?expired=1';
-      // Throw so any in-flight awaits don't continue
-      throw new Error('Session expired');
+    // 401 on a non-auth endpoint → try to refresh first, then retry once
+    if (res.status === 401 && !AUTH_ENDPOINTS.some(e => endpoint.startsWith(e))) {
+      const newToken = await tryRefresh();
+
+      if (newToken) {
+        // Retry the original request with the new token
+        const retryRes = await fetch(url, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${newToken}`,
+            ...headers,
+          },
+          ...rest,
+        });
+
+        if (retryRes.ok) return retryRes.json() as Promise<T>;
+
+        // Retry also failed → give up
+        if (retryRes.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login?expired=1';
+          throw new Error('Session expired');
+        }
+      } else {
+        // Refresh failed → session gone
+        localStorage.removeItem('token');
+        window.location.href = '/login?expired=1';
+        throw new Error('Session expired');
+      }
     }
 
     const body = await res.json().catch(() => ({ error: res.statusText }));
@@ -72,6 +125,7 @@ export const api = {
     const token = localStorage.getItem('token');
     return fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
+      credentials: 'include',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     }).then(async (res) => {

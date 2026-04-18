@@ -27,6 +27,9 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
+// Cookie parser (needed for httpOnly refresh token)
+app.use(require('cookie-parser')());
+
 // Body parser with size limit
 app.use(express.json({ limit: '16kb' }));
 

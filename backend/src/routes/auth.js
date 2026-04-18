@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { register, login, me, forgotPassword, resetPassword } = require('../controllers/authController');
+const { register, login, refresh, logout, me, forgotPassword, resetPassword } = require('../controllers/authController');
 const { authenticateToken } = require('../middlewares/auth');
 const rateLimit = require('express-rate-limit');
 const validate = require('../middlewares/validate');
@@ -32,6 +32,8 @@ const router = Router();
 
 router.post('/register', authLimiter, validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/refresh', refresh);   // no auth middleware — cookie carries the token
+router.post('/logout', logout);     // no auth middleware — works even with expired access token
 router.get('/me', authenticateToken, me);
 router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
