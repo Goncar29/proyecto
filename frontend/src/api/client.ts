@@ -23,6 +23,18 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
   });
 
   if (!res.ok) {
+    // 401 outside of auth endpoints → session expired, redirect to login
+    if (
+      res.status === 401 &&
+      !endpoint.startsWith('/auth/login') &&
+      !endpoint.startsWith('/auth/register')
+    ) {
+      localStorage.removeItem('token');
+      window.location.href = '/login?expired=1';
+      // Throw so any in-flight awaits don't continue
+      throw new Error('Session expired');
+    }
+
     const body = await res.json().catch(() => ({ error: res.statusText }));
     // Backend has two error shapes:
     //   validate middleware → { message, details[] }

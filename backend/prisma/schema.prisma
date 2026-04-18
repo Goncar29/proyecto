@@ -61,6 +61,7 @@ model Appointment {
   timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Restrict)
   patient   User      @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
   doctor    User      @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
+  review    Review?
 
   @@index([patientId])
   @@index([doctorId])
@@ -137,6 +138,7 @@ model Review {
 
   doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
   patient       User          @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Restrict)
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   votes         ReviewVote[]
 
   @@index([doctorProfileId])
