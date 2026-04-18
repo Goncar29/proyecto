@@ -1,11 +1,23 @@
 const prisma = require('../utils/prismaClient');
+const { parsePagination, buildPage } = require('../services/paginate');
 
 exports.getTimeBlocks = async (req, res, next) => {
     try {
         const doctorId = parseInt(req.query.doctorId, 10);
         const where = !isNaN(doctorId) ? { doctorId } : {};
-        const blocks = await prisma.timeBlock.findMany({ where });
-        res.status(200).json(blocks);
+
+        const { page, pageSize, skip, take } = parsePagination({
+            page: req.query.page,
+            pageSize: req.query.pageSize,
+            defaultPageSize: 20,
+        });
+
+        const [items, total] = await prisma.$transaction([
+            prisma.timeBlock.findMany({ where, orderBy: { startTime: 'asc' }, skip, take }),
+            prisma.timeBlock.count({ where }),
+        ]);
+
+        res.status(200).json(buildPage({ items, total, page, pageSize }));
     } catch (error) {
         next(error);
     }

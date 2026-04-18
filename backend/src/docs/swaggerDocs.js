@@ -180,6 +180,60 @@ module.exports = {
                 },
             },
         },
+        '/auth/forgot-password': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Solicitar recuperación de contraseña',
+                description: 'Envía un email con link de reset. Siempre responde 200 para prevenir enumeración de usuarios.',
+                security: [],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    email: { type: 'string', format: 'email' },
+                                },
+                                required: ['email'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Si el email existe, se envió un link de recuperación (TTL: 30 min)' },
+                    400: { description: 'Email inválido' },
+                    429: { description: 'Rate limited — máx 5 intentos por hora' },
+                },
+            },
+        },
+        '/auth/reset-password': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Resetear contraseña con token',
+                description: 'El token se obtiene del link enviado por email. Single-use, expira en 30 min.',
+                security: [],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    token: { type: 'string', description: 'Token de 64 caracteres hex recibido por email' },
+                                    newPassword: { type: 'string', minLength: 8 },
+                                },
+                                required: ['token', 'newPassword'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Contraseña actualizada correctamente' },
+                    400: { description: 'Token inválido, expirado o ya usado — código: INVALID_TOKEN' },
+                },
+            },
+        },
         '/auth/me': {
             get: {
                 tags: ['Auth'],
@@ -200,6 +254,33 @@ module.exports = {
         },
 
         // =================== USERS ===================
+        '/users/me/password': {
+            patch: {
+                tags: ['Users'],
+                summary: 'Cambiar contraseña del usuario autenticado',
+                security: [{ bearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    currentPassword: { type: 'string' },
+                                    newPassword: { type: 'string', minLength: 8 },
+                                },
+                                required: ['currentPassword', 'newPassword'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Contraseña actualizada' },
+                    400: { description: 'Nueva contraseña igual a la actual — código: SAME_PASSWORD' },
+                    401: { description: 'Contraseña actual incorrecta — código: WRONG_CURRENT_PASSWORD' },
+                },
+            },
+        },
         '/users/{id}': {
             put: {
                 tags: ['Users'],
@@ -524,10 +605,22 @@ module.exports = {
         '/time-blocks': {
             get: {
                 tags: ['TimeBlocks'],
-                summary: 'Listar time-blocks disponibles',
+                summary: 'Listar time-blocks disponibles (paginado)',
                 description: 'Accesible por patient, doctor y admin',
+                parameters: [
+                    { name: 'doctorId', in: 'query', required: false, schema: { type: 'integer' }, description: 'Filtrar por doctor' },
+                    { name: 'page', in: 'query', required: false, schema: { type: 'integer', default: 1 } },
+                    { name: 'pageSize', in: 'query', required: false, schema: { type: 'integer', default: 20, maximum: 50 } },
+                ],
                 responses: {
-                    200: { description: 'Lista de bloques' },
+                    200: {
+                        description: 'Lista paginada de bloques',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/PaginatedResponse' },
+                            },
+                        },
+                    },
                 },
             },
             post: {
@@ -619,9 +712,23 @@ module.exports = {
         '/admin/reservations': {
             get: {
                 tags: ['Admin'],
-                summary: 'Ver todas las reservas (solo admin)',
+                summary: 'Ver todas las reservas paginadas (solo admin)',
+                parameters: [
+                    { name: 'page', in: 'query', required: false, schema: { type: 'integer', default: 1 } },
+                    { name: 'pageSize', in: 'query', required: false, schema: { type: 'integer', default: 20, maximum: 50 } },
+                    { name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'] } },
+                    { name: 'search', in: 'query', required: false, schema: { type: 'string' }, description: 'Búsqueda por nombre o email de paciente/doctor' },
+                ],
                 responses: {
-                    200: { description: 'Reservas obtenidas' },
+                    200: {
+                        description: 'Reservas paginadas',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/PaginatedResponse' },
+                            },
+                        },
+                    },
+                    403: { description: 'Acceso denegado' },
                 },
             },
         },

@@ -30,36 +30,45 @@ const STATUS_COLORS: Record<string, string> = {
 
 const PAGE_SIZE = 20;
 
+interface PaginatedReservations {
+  items: Reservation[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export default function ReservationsPanel() {
   const { toast } = useToast();
-  const [all, setAll] = useState<Reservation[]>([]);
+  const [items, setItems] = useState<Reservation[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+
+  // Debounce search to avoid a request on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
     setLoading(true);
-    api.get<Reservation[]>('/admin/reservations')
-      .then(data => setAll(data))
+    const params: Record<string, string> = {
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+    };
+    if (statusFilter) params.status = statusFilter;
+    if (searchDebounced) params.search = searchDebounced;
+
+    api.get<PaginatedReservations>('/admin/reservations', params)
+      .then(data => { setItems(data.items); setTotal(data.total); })
       .catch(() => toast('Error al cargar reservaciones', 'error'))
       .finally(() => setLoading(false));
-  }, []);
-
-  // Filtrado y búsqueda en el cliente (backend no pagina este endpoint aún)
-  const filtered = all.filter(r => {
-    const matchesStatus = !statusFilter || r.status === statusFilter;
-    const q = search.toLowerCase();
-    const matchesSearch = !q
-      || r.patient.name.toLowerCase().includes(q)
-      || r.patient.email.toLowerCase().includes(q)
-      || r.doctor.name.toLowerCase().includes(q)
-      || r.doctor.email.toLowerCase().includes(q);
-    return matchesStatus && matchesSearch;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [page, statusFilter, searchDebounced]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -76,7 +85,7 @@ export default function ReservationsPanel() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Reservaciones</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {filtered.length} de {all.length} total
+          {total} total
         </p>
       </div>
 
@@ -104,11 +113,11 @@ export default function ReservationsPanel() {
       {/* Lista */}
       {loading ? (
         <p className="text-gray-500 dark:text-gray-400">Cargando reservaciones...</p>
-      ) : paginated.length === 0 ? (
+      ) : items.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400">No se encontraron reservaciones.</p>
       ) : (
         <div className="space-y-2">
-          {paginated.map(r => {
+          {items.map(r => {
             const start = r.timeBlock
               ? new Date(r.timeBlock.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : '—';

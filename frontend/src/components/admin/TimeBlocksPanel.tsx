@@ -17,9 +17,20 @@ interface DoctorOption {
   specialty: string;
 }
 
+interface PaginatedBlocks {
+  items: TimeBlockWithDoctor[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+const PAGE_SIZE = 20;
+
 export default function TimeBlocksPanel() {
   const { toast } = useToast();
   const [blocks, setBlocks] = useState<TimeBlockWithDoctor[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -29,33 +40,44 @@ export default function TimeBlocksPanel() {
   const [endTime, setEndTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   async function fetchAllDoctors(): Promise<DoctorOption[]> {
-    const PAGE_SIZE = 50;
-    let page = 1;
+    const PAGE_SIZE_DOC = 50;
+    let p = 1;
     let all: DoctorOption[] = [];
     while (true) {
       const data = await api.get<{ items: DoctorOption[]; total: number }>(
         '/public/doctors',
-        { pageSize: String(PAGE_SIZE), page: String(page) }
+        { pageSize: String(PAGE_SIZE_DOC), page: String(p) }
       );
       all = [...all, ...data.items];
       if (all.length >= data.total) break;
-      page++;
+      p++;
     }
     return all;
   }
 
+  async function fetchBlocks(p: number) {
+    setLoading(true);
+    try {
+      const data = await api.get<PaginatedBlocks>('/time-blocks', {
+        page: String(p),
+        pageSize: String(PAGE_SIZE),
+      });
+      setBlocks(data.items);
+      setTotal(data.total);
+    } catch {
+      toast('Error al cargar bloques', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    Promise.all([
-      api.get<TimeBlockWithDoctor[]>('/time-blocks'),
-      fetchAllDoctors(),
-    ])
-      .then(([tb, allDoctors]) => {
-        setBlocks(tb);
-        setDoctors(allDoctors);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    Promise.all([fetchBlocks(1), fetchAllDoctors()])
+      .then(([, allDoctors]) => setDoctors(allDoctors));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,18 +90,20 @@ export default function TimeBlocksPanel() {
     try {
       const startISO = new Date(`${date}T${startTime}:00`).toISOString();
       const endISO = new Date(`${date}T${endTime}:00`).toISOString();
-      const block = await api.post<TimeBlockWithDoctor>('/time-blocks', {
+      await api.post<TimeBlockWithDoctor>('/time-blocks', {
         doctorId: Number(doctorId),
         startTime: startISO,
         endTime: endISO,
       });
-      setBlocks(prev => [block, ...prev]);
       setShowForm(false);
       setDoctorId('');
       setDate('');
       setStartTime('');
       setEndTime('');
       toast('Bloque de tiempo creado', 'success');
+      // Reload page 1 to show the new block
+      setPage(1);
+      fetchBlocks(1);
       fetchAllDoctors().then(setDoctors);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : 'Error al crear bloque', 'error');
@@ -91,19 +115,30 @@ export default function TimeBlocksPanel() {
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/time-blocks/${id}`);
-      setBlocks(prev => prev.filter(b => b.id !== id));
       toast('Bloque eliminado', 'success');
+      // Reload current page (if it becomes empty, go to page 1)
+      const newTotal = total - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
+      const targetPage = Math.min(page, newTotalPages);
+      setPage(targetPage);
+      fetchBlocks(targetPage);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : 'Error al eliminar', 'error');
     }
   };
 
-  if (loading) return <p className="text-gray-500 dark:text-gray-400">Cargando bloques...</p>;
+  const handlePageChange = (p: number) => {
+    setPage(p);
+    fetchBlocks(p);
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Bloques de tiempo</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Bloques de tiempo
+          {!loading && <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-2">({total} total)</span>}
+        </h2>
         <button
           onClick={() => setShowForm(!showForm)}
           className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
@@ -157,33 +192,56 @@ export default function TimeBlocksPanel() {
         </form>
       )}
 
-      {blocks.length === 0 ? (
+      {loading ? (
+        <p className="text-gray-500 dark:text-gray-400">Cargando bloques...</p>
+      ) : blocks.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400">No hay bloques de tiempo registrados.</p>
       ) : (
         <div className="space-y-2">
-          {blocks
-            .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
-            .map(b => {
-              const dateStr = new Date(b.date).toLocaleDateString();
-              const start = new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const end = new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const doctorName = doctors.find(d => d.id === b.doctorId)?.name ?? `Doctor #${b.doctorId}`;
-              return (
-                <div key={b.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium text-gray-900 dark:text-white">{doctorName}</span>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm ml-3">{dateStr}</span>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">{start} – {end}</span>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(b.id)}
-                    className="text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    Eliminar
-                  </button>
+          {blocks.map(b => {
+            const dateStr = new Date(b.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+            const start = new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const end = new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const doctorName = doctors.find(d => d.id === b.doctorId)?.name ?? `Doctor #${b.doctorId}`;
+            return (
+              <div key={b.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex items-center justify-between">
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">{doctorName}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm ml-3">{dateStr}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">{start} – {end}</span>
                 </div>
-              );
-            })}
+                <button
+                  onClick={() => handleDelete(b.id)}
+                  className="text-xs text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Eliminar
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6">
+          <button
+            onClick={() => handlePageChange(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            ← Anterior
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            Siguiente →
+          </button>
         </div>
       )}
     </div>

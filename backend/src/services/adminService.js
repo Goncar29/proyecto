@@ -1,4 +1,5 @@
 const prisma = require('../utils/prismaClient');
+const { parsePagination, buildPage } = require('./paginate');
 
 // Crear bloque de tiempo con validaciones y chequeo de solapamiento
 const createTimeBlockService = async (doctorId, startTime, endTime) => {
@@ -54,16 +55,34 @@ const createTimeBlockService = async (doctorId, startTime, endTime) => {
     });
 };
 
-// Listar reservas con relaciones completas
-const listReservationsService = async () => {
-    return await prisma.appointment.findMany({
-        include: {
-            patient: { select: { id: true, name: true, email: true, role: true } },
-            doctor: { select: { id: true, name: true, email: true, role: true } },
-            timeBlock: true
-        },
-        orderBy: { createdAt: 'desc' }
-    });
+// Listar reservas con relaciones completas (paginado, filtrable por status y búsqueda)
+const listReservationsService = async ({ page, pageSize, status, search } = {}) => {
+    const { page: p, pageSize: ps, skip, take } = parsePagination({ page, pageSize, defaultPageSize: 20 });
+
+    const where = {};
+    if (status) where.status = status;
+    if (search) {
+        const q = search.trim();
+        where.OR = [
+            { patient: { name: { contains: q, mode: 'insensitive' } } },
+            { patient: { email: { contains: q, mode: 'insensitive' } } },
+            { doctor: { name: { contains: q, mode: 'insensitive' } } },
+            { doctor: { email: { contains: q, mode: 'insensitive' } } },
+        ];
+    }
+
+    const include = {
+        patient: { select: { id: true, name: true, email: true, role: true } },
+        doctor: { select: { id: true, name: true, email: true, role: true } },
+        timeBlock: true,
+    };
+
+    const [items, total] = await prisma.$transaction([
+        prisma.appointment.findMany({ where, include, orderBy: { createdAt: 'desc' }, skip, take }),
+        prisma.appointment.count({ where }),
+    ]);
+
+    return buildPage({ items, total, page: p, pageSize: ps });
 };
 
 // Listar usuarios activos (no eliminados) con paginación opcional

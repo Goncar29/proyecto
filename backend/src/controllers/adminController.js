@@ -19,8 +19,9 @@ const createTimeBlock = async (req, res, next) => {
 
 const listReservations = async (req, res, next) => {
     try {
-        const reservations = await listReservationsService();
-        res.json(reservations);
+        const { page, pageSize, status, search } = req.query;
+        const result = await listReservationsService({ page, pageSize, status, search });
+        res.json(result);
     } catch (error) {
         return next(error);
     }
