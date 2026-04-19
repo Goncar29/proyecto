@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const { updateUser, changePassword } = require('../controllers/userController');
 const { uploadUserPhoto } = require('../controllers/userPhotoController');
-const reservationsRouter = require('./reservations');
 const appointmentsRouter = require('./appointments');
 const { authenticateToken } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
@@ -37,6 +36,5 @@ router.put(
 );
 
 router.use('/:id/appointments', authenticateToken, appointmentsRouter);
-router.use('/:id/reservations', authenticateToken, reservationsRouter);
 
 module.exports = router;
