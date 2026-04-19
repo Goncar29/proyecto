@@ -62,10 +62,20 @@ const completeAppointmentSchema = Joi.object({
         .messages({ 'string.max': 'Las notas no pueden superar los 500 caracteres.' }),
 });
 
+const rescheduleAppointmentSchema = Joi.object({
+    timeBlockId: Joi.number().integer().positive().required()
+        .messages({
+            'number.base': 'El nuevo bloque de tiempo debe ser un número.',
+            'number.positive': 'El nuevo bloque de tiempo debe ser un número positivo.',
+            'any.required': 'El nuevo bloque de tiempo es obligatorio.',
+        }),
+});
+
 module.exports = {
     createAppointmentSchema,
     listAppointmentsQuerySchema,
     cancelAppointmentSchema,
     confirmAppointmentSchema,
     completeAppointmentSchema,
+    rescheduleAppointmentSchema,
 };

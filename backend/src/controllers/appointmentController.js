@@ -118,6 +118,17 @@ exports.updateAppointment = async (req, res, next) => {
     }
 };
 
+exports.rescheduleAppointment = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { timeBlockId } = req.body;
+        const appointment = await appointmentService.rescheduleAppointment(id, req.user, timeBlockId);
+        return res.status(200).json(appointment);
+    } catch (error) {
+        return next(error);
+    }
+};
+
 exports.deleteAppointment = async (req, res, next) => {
     try {
         const { id } = req.params;

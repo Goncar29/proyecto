@@ -5,6 +5,7 @@ import { api } from '@/api/client';
 import { ListSkeleton } from '@/components/Skeleton';
 import ReviewForm from '@/components/ReviewForm';
 import DoctorAvatar from '@/components/DoctorAvatar';
+import ReschedulePicker from '@/components/ReschedulePicker';
 import type { Appointment, PaginatedResponse } from '@/types';
 
 const PAGE_SIZE = 10;
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [reviewingId, setReviewingId] = useState<number | null>(null);
   const [reviewed, setReviewed] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isDoctor = user?.role === 'DOCTOR';
@@ -359,6 +361,16 @@ export default function Dashboard() {
                       </button>
                     )}
 
+                    {/* Reschedule — patient only, PENDING or CONFIRMED */}
+                    {(a.status === 'PENDING' || a.status === 'CONFIRMED') && !isDoctor && (
+                      <button
+                        onClick={() => setReschedulingAppt(a)}
+                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 border border-purple-200 dark:border-purple-700 px-3 py-1 rounded-lg"
+                      >
+                        Reprogramar
+                      </button>
+                    )}
+
                     {/* Cancel — both roles, while not terminal */}
                     {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
                       <button
@@ -408,6 +420,18 @@ export default function Dashboard() {
             </div>
           )}
         </>
+      )}
+      {/* Reschedule modal */}
+      {reschedulingAppt && user && (
+        <ReschedulePicker
+          appointment={reschedulingAppt}
+          userId={user.id}
+          onClose={() => setReschedulingAppt(null)}
+          onRescheduled={(updated) => {
+            setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
+            setReschedulingAppt(null);
+          }}
+        />
       )}
     </div>
   );

@@ -222,6 +222,81 @@ exports.updateAppointment = async (id, data) => {
     });
 };
 
+/**
+ * Reschedule an appointment to a different time block.
+ *
+ * Rules:
+ *  - Only the owning patient or an admin can reschedule.
+ *  - Only PENDING or CONFIRMED appointments can be rescheduled.
+ *  - New time block must belong to the same doctor.
+ *  - New time block must be free (no other appointment).
+ */
+exports.rescheduleAppointment = async (appointmentId, caller, newTimeBlockId) => {
+    const id = parseInt(appointmentId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+        const e = new Error('Cita no encontrada');
+        e.status = 404; e.code = 'NOT_FOUND';
+        throw e;
+    }
+
+    return prisma.$transaction(async (tx) => {
+        const existing = await tx.appointment.findUnique({ where: { id } });
+        if (!existing) {
+            const e = new Error('Cita no encontrada');
+            e.status = 404; e.code = 'NOT_FOUND';
+            throw e;
+        }
+
+        const role = caller.role?.toLowerCase();
+        if (existing.patientId !== caller.id && role !== 'admin') {
+            const e = new Error('Forbidden');
+            e.status = 403; e.code = 'FORBIDDEN';
+            throw e;
+        }
+
+        if (existing.status !== 'PENDING' && existing.status !== 'CONFIRMED') {
+            const e = new Error(`No se puede reprogramar una cita en estado ${existing.status}`);
+            e.status = 409; e.code = 'INVALID_STATE';
+            throw e;
+        }
+
+        const newTimeBlock = await tx.timeBlock.findUnique({ where: { id: newTimeBlockId } });
+        if (!newTimeBlock) {
+            const e = new Error('El nuevo bloque de tiempo no existe.');
+            e.status = 404; e.code = 'NOT_FOUND';
+            throw e;
+        }
+
+        if (newTimeBlock.doctorId !== existing.doctorId) {
+            const e = new Error('El nuevo bloque de tiempo no pertenece al mismo doctor.');
+            e.status = 400; e.code = 'INVALID_INPUT';
+            throw e;
+        }
+
+        const conflict = await tx.appointment.findFirst({
+            where: { timeBlockId: newTimeBlockId, id: { not: id } },
+        });
+        if (conflict) {
+            const e = new Error('El bloque de tiempo seleccionado ya está reservado.');
+            e.status = 409; e.code = 'CONFLICT';
+            throw e;
+        }
+
+        return tx.appointment.update({
+            where: { id },
+            data: {
+                timeBlockId: newTimeBlockId,
+                date: newTimeBlock.startTime,
+            },
+            include: {
+                timeBlock: true,
+                patient: { select: { id: true, name: true } },
+                doctor:  { select: { id: true, name: true } },
+            },
+        });
+    });
+};
+
 exports.deleteAppointment = async (id) => {
     const numId = parseInt(id, 10);
     const existing = await prisma.appointment.findUnique({ where: { id: numId } });
