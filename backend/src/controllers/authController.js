@@ -55,11 +55,15 @@ const refresh = async (req, res) => {
  * POST /auth/logout
  * Revokes the refresh token and clears the cookie.
  */
-const logout = async (req, res) => {
-    const refreshTokenPlain = req.cookies?.[REFRESH_COOKIE_NAME];
-    await logoutUser(refreshTokenPlain);
-    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
-    return res.json({ message: 'Sesión cerrada' });
+const logout = async (req, res, next) => {
+    try {
+        const refreshTokenPlain = req.cookies?.[REFRESH_COOKIE_NAME];
+        await logoutUser(refreshTokenPlain);
+        res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
+        return res.json({ message: 'Sesión cerrada' });
+    } catch (error) {
+        return next(error);
+    }
 };
 
 const me = async (req, res, next) => {

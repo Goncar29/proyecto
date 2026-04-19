@@ -14,9 +14,13 @@ const PRISMA_ERROR_MAP = {
     P2003: { status: 409, code: 'FK_VIOLATION', msg: 'Referenced resource does not exist' },
 };
 
+const multer = require('multer');
+
 const errorHandler = (err, req, res, next) => {
+    // Si los headers ya fueron enviados (streaming, partial response), delegamos a Express
+    if (res.headersSent) return next(err);
+
     // Multer errors (file upload)
-    const multer = require('multer');
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({ error: 'Archivo muy grande. El límite es 5 MB.', code: 'FILE_TOO_LARGE' });

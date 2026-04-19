@@ -14,13 +14,17 @@ async function authenticateToken(req, res, next) {
         // after token issuance is rejected immediately without waiting for JWT expiry.
         // Do NOT replace this with a cache — it would allow suspended users to keep
         // acting on their existing token until it expires.
-        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-        if (!user || user.deletedAt || !user.isActive || user.isSuspended) {
-            return res.status(401).json({ error: 'Cuenta inactiva o suspendida' });
-        }
+        try {
+            const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+            if (!user || user.deletedAt || !user.isActive || user.isSuspended) {
+                return res.status(401).json({ error: 'Cuenta inactiva o suspendida' });
+            }
 
-        req.user = decoded;
-        next();
+            req.user = decoded;
+            next();
+        } catch (e) {
+            next(e);
+        }
     });
 }
 
