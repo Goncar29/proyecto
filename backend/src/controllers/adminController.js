@@ -7,6 +7,7 @@ const { createTimeBlockService,
     toggleUserStatusService,
     promoteToDoctorService,
 } = require('../services/adminService');
+const { logAudit } = require('../services/audit');
 
 const createTimeBlock = async (req, res, next) => {
     try {
@@ -57,9 +58,17 @@ const updateUserId = async (req, res, next) => {
         const data = {};
         if (name !== undefined) data.name = name;
         if (email !== undefined) data.email = email;
-        if (password !== undefined) data.password = password;
         if (role !== undefined) data.role = role;
+        // updateUserService ya hashea la password internamente — NO pre-hashear acá
+        if (password !== undefined) data.password = password;
+
         const updated = await updateUserService(req.params.id, data);
+
+        // Audit explícito cuando el admin cambia la password de otro usuario
+        if (password !== undefined) {
+            await logAudit(req.user.id, `Admin cambió password del usuario ${req.params.id}`);
+        }
+
         res.status(200).json(updated);
     } catch (error) {
         return next(error);

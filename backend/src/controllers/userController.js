@@ -15,11 +15,11 @@ const updateUser = async (req, res, next) => {
     }
 
     // Sanitizar campos antes de persistir (Joi validó formato, acá normalizamos)
-    const { name, email, password } = req.body;
+    // Nota: password NO se acepta acá — usar PATCH /me/password (requiere currentPassword)
+    const { name, email } = req.body;
     const allowed = {};
-    if (name !== undefined)     allowed.name     = String(name).trim();
-    if (email !== undefined)    allowed.email    = String(email).trim().toLowerCase();
-    if (password !== undefined) allowed.password = password;
+    if (name !== undefined)  allowed.name  = String(name).trim();
+    if (email !== undefined) allowed.email = String(email).trim().toLowerCase();
 
     try {
         const updated = await updateUserService(id, allowed);

@@ -50,9 +50,31 @@ const updateUserSchema = Joi.object({
         .messages({
             'string.email': 'El email no tiene un formato válido.',
         }),
-    password: Joi.string().min(8).optional()
+    // password NO está permitido en este endpoint — usar PATCH /me/password
+}).min(1)
+    .messages({
+        'object.min': 'Debés enviar al menos un campo para actualizar.',
+    });
+
+// Schema para que un admin actualice datos de otro usuario
+const adminUpdateUserSchema = Joi.object({
+    name: Joi.string().min(3).max(100).optional()
+        .messages({
+            'string.min': 'El nombre debe tener al menos 3 caracteres.',
+            'string.max': 'El nombre no puede superar los 100 caracteres.',
+        }),
+    email: Joi.string().email({ tlds: false }).optional()
+        .messages({
+            'string.email': 'El email no tiene un formato válido.',
+        }),
+    role: Joi.string().valid('patient', 'doctor', 'admin').optional()
+        .messages({
+            'any.only': 'El rol debe ser patient, doctor o admin.',
+        }),
+    password: Joi.string().min(8).max(100).optional()
         .messages({
             'string.min': 'La contraseña debe tener al menos 8 caracteres.',
+            'string.max': 'La contraseña es demasiado larga.',
         }),
 }).min(1)
     .messages({
@@ -103,6 +125,7 @@ module.exports = {
     registerSchema,
     loginSchema,
     updateUserSchema,
+    adminUpdateUserSchema,
     forgotPasswordSchema,
     resetPasswordSchema,
     changePasswordSchema,

@@ -20,7 +20,10 @@ async function authenticateToken(req, res, next) {
                 return res.status(401).json({ error: 'Cuenta inactiva o suspendida' });
             }
 
-            req.user = decoded;
+            // Merge con datos frescos de la DB: si el rol o email cambió después
+            // de emitir el JWT, el request usa los valores actuales y no los stale.
+            // Normalizar a lowercase (igual que authService firma el JWT con role.toLowerCase())
+            req.user = { ...decoded, role: user.role.toLowerCase(), email: user.email };
             next();
         } catch (e) {
             next(e);

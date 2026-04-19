@@ -91,25 +91,14 @@ describe('PUT /api/users/:id — actualización exitosa', () => {
         tokens.doctor = await getToken(users.doctor.email);
     });
 
-    it('usuario actualiza su contraseña → 200 y puede hacer login con la nueva', async () => {
-        const newPassword = 'nuevapass123';
+    it('password en PUT /users/:id → 400 (usar PATCH /me/password)', async () => {
+        // PUT /users/:id no acepta password — se debe usar PATCH /me/password
+        // que requiere currentPassword para prevenir cambios con JWT robado
         const res = await request(app)
             .put(`/api/users/${users.patient.id}`)
             .set('Authorization', `Bearer ${tokens.patient}`)
-            .send({ password: newPassword });
-        expect(res.status).toBe(200);
-
-        const loginRes = await request(app)
-            .post('/api/auth/login')
-            .send({ email: users.patient.email, password: newPassword });
-        expect(loginRes.status).toBe(200);
-
-        // restaurar contraseña original
-        await request(app)
-            .put(`/api/users/${users.patient.id}`)
-            .set('Authorization', `Bearer ${loginRes.body.token}`)
-            .send({ password: TEST_PASSWORD });
-        tokens.patient = await getToken(users.patient.email);
+            .send({ password: 'nuevapass123' });
+        expect(res.status).toBe(400);
     });
 });
 
@@ -135,7 +124,8 @@ describe('PUT /api/users/:id — validaciones', () => {
         expect(res.status).toBe(400);
     });
 
-    it('contraseña menor a 8 caracteres → 400', async () => {
+    it('campo desconocido (password) → 400', async () => {
+        // password no está en el schema de updateUser → Joi lo rechaza (allowUnknown: false)
         const res = await request(app)
             .put(`/api/users/${users.patient.id}`)
             .set('Authorization', `Bearer ${tokens.patient}`)
