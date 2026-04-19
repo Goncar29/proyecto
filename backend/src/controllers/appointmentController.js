@@ -67,6 +67,7 @@ exports.cancelAppointment = async (req, res, next) => {
             }).catch(() => {});
         }
 
+        res.locals.auditMetadata = { appointmentId: Number(req.params.id), reason: appt.reason ?? null };
         return res.status(200).json(appt);
     } catch (error) {
         return next(error);
@@ -123,6 +124,10 @@ exports.rescheduleAppointment = async (req, res, next) => {
         const { id } = req.params;
         const { timeBlockId } = req.body;
         const appointment = await appointmentService.rescheduleAppointment(id, req.user, timeBlockId);
+        res.locals.auditMetadata = {
+            appointmentId:   Number(id),
+            toTimeBlockId:   Number(timeBlockId),
+        };
         return res.status(200).json(appointment);
     } catch (error) {
         return next(error);

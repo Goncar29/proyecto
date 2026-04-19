@@ -97,6 +97,7 @@ model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int
   action    String
+  metadata  Json?
   timestamp DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)

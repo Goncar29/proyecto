@@ -23,6 +23,7 @@ const updateUser = async (req, res, next) => {
 
     try {
         const updated = await updateUserService(id, allowed);
+        res.locals.auditMetadata = { changedFields: Object.keys(allowed) };
         return res.status(200).json(updated);
     } catch (err) {
         return next(err);

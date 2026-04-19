@@ -90,6 +90,11 @@ const toggleUserStatus = async (req, res, next) => {
     const { isActive, isSuspended, suspensionReason } = req.body;
     try {
         const updatedUser = await toggleUserStatusService(userId, isActive, isSuspended, suspensionReason);
+        res.locals.auditMetadata = {
+            targetUserId: userId,
+            isActive:     updatedUser.isActive,
+            isSuspended:  updatedUser.isSuspended,
+        };
         res.json({ message: 'Estado del usuario actualizado.', user: updatedUser });
     } catch (error) {
         return next(error);
