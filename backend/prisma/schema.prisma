@@ -16,6 +16,7 @@ model User {
   isActive         Boolean   @default(true)
   isSuspended      Boolean   @default(false)
   suspensionReason String?
+  photoUrl         String?
   deletedAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

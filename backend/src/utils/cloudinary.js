@@ -30,14 +30,15 @@ cloudinary.config({
 /**
  * Upload a Buffer to Cloudinary.
  *
- * @param {Buffer} buffer  - File buffer from multer memoryStorage
- * @param {string} folder  - Cloudinary folder (e.g. 'doctor-photos')
+ * @param {Buffer} buffer          - File buffer from multer memoryStorage
+ * @param {string} folder          - Cloudinary folder (e.g. 'doctor-photos')
+ * @param {object} [extraOpts={}]  - Extra Cloudinary upload options (e.g. { public_id, overwrite })
  * @returns {Promise<{ secure_url: string, public_id: string }>}
  */
-const uploadBuffer = (buffer, folder) =>
+const uploadBuffer = (buffer, folder, extraOpts = {}) =>
     new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-            { folder, resource_type: 'image' },
+            { folder, resource_type: 'image', ...extraOpts },
             (error, result) => {
                 if (error) return reject(error);
                 resolve({ secure_url: result.secure_url, public_id: result.public_id });

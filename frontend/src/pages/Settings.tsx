@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '@/api/client';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
+import UserAvatar from '@/components/UserAvatar';
 
 const inputClass =
   'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none';
@@ -50,6 +51,35 @@ export default function Settings() {
     }
   };
 
+  // ── Sección foto de perfil ────────────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast('El archivo es muy grande. El límite es 5 MB.', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploadingPhoto(true);
+    try {
+      await api.postFile<{ photoUrl: string }>('/users/me/photo', formData);
+      await refreshUser();
+      toast('Foto actualizada con éxito.', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Error al subir la foto.', 'error');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   // ── Sección cambio de contraseña ───────────────────────────────────────────
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword]         = useState('');
@@ -94,6 +124,38 @@ export default function Settings() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ajustes</h1>
+
+      {/* ── Foto de perfil ── */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Foto de perfil</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          JPG, PNG o WebP. Máximo 5 MB.
+        </p>
+        <div className="flex items-center gap-5">
+          <UserAvatar name={user?.name ?? ''} photoUrl={user?.photoUrl} size="lg" />
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
+              className="hidden"
+              id="photo-upload"
+            />
+            <label
+              htmlFor="photo-upload"
+              className={`inline-block cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              {uploadingPhoto ? 'Subiendo...' : user?.photoUrl ? 'Cambiar foto' : 'Subir foto'}
+            </label>
+            {user?.photoUrl && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                Re-subir reemplaza la foto anterior automáticamente.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── Datos personales ── */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">

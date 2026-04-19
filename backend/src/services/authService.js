@@ -166,6 +166,7 @@ const getCurrentUser = async (userId) => {
             email: true,
             name: true,
             role: true,
+            photoUrl: true,
             createdAt: true,
         },
     });

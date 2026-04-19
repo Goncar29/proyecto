@@ -7,6 +7,7 @@ const publicSelect = {
     email: true,
     name: true,
     role: true,
+    photoUrl: true,
     isActive: true,
     isSuspended: true,
     suspensionReason: true,
