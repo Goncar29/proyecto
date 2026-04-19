@@ -59,8 +59,14 @@ exports.updateReservation = async (req, res, next) => {
 
 exports.deleteReservation = async (req, res, next) => {
     try {
-        const { id } = req.params;
-        await reservationService.deleteReservation(id);
+        const { reservationId } = req.params;
+
+        const existing = await reservationService.getReservation(reservationId);
+        if (!existing) {
+            return res.status(404).json({ error: 'Reserva no encontrada.' });
+        }
+
+        await reservationService.deleteReservation(reservationId);
         res.status(204).send();
     } catch (error) {
         return next(error);

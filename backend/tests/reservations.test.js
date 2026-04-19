@@ -117,6 +117,74 @@ describe('POST /api/users/:id/reservations', () => {
     });
 });
 
+// ─── Eliminar reserva ─────────────────────────────────────────────────────────
+
+describe('DELETE /api/users/:id/reservations/:reservationId', () => {
+    let reservationToDelete = null;
+    let extraTimeBlock = null;
+
+    beforeAll(async () => {
+        // Crear un time block y reservation exclusivos para estos tests
+        const startTime = new Date(Date.now() + 48 * 60 * 60 * 1000); // pasado mañana
+        const endTime   = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+        extraTimeBlock = await prisma.timeBlock.create({
+            data: { doctorId: users.doctor.id, startTime, endTime, date: startTime }
+        });
+
+        reservationToDelete = await prisma.appointment.create({
+            data: {
+                reason:      'Para borrar',
+                date:        startTime,
+                patientId:   users.patient.id,
+                doctorId:    users.doctor.id,
+                timeBlockId: extraTimeBlock.id,
+            }
+        });
+
+        tokens.admin = await getToken(users.admin.email);
+    });
+
+    afterAll(async () => {
+        // Limpiar si el test de 204 falló y no se borró
+        if (reservationToDelete) {
+            await prisma.appointment.deleteMany({ where: { id: reservationToDelete.id } });
+        }
+        if (extraTimeBlock) {
+            await prisma.timeBlock.deleteMany({ where: { id: extraTimeBlock.id } });
+        }
+    });
+
+    it('admin elimina reserva existente → 204', async () => {
+        const res = await request(app)
+            .delete(`/api/users/${users.patient.id}/reservations/${reservationToDelete.id}`)
+            .set('Authorization', `Bearer ${tokens.admin}`);
+
+        expect(res.status).toBe(204);
+
+        // Verificar que realmente se eliminó de la DB
+        const deleted = await prisma.appointment.findUnique({ where: { id: reservationToDelete.id } });
+        expect(deleted).toBeNull();
+        reservationToDelete = null; // marcar como ya borrado
+    });
+
+    it('admin intenta eliminar reserva inexistente → 404', async () => {
+        const res = await request(app)
+            .delete(`/api/users/${users.patient.id}/reservations/999999`)
+            .set('Authorization', `Bearer ${tokens.admin}`);
+
+        expect(res.status).toBe(404);
+    });
+
+    it('patient no puede eliminar reservas → 403', async () => {
+        const res = await request(app)
+            .delete(`/api/users/${users.patient.id}/reservations/1`)
+            .set('Authorization', `Bearer ${tokens.patient}`);
+
+        expect(res.status).toBe(403);
+    });
+});
+
 // ─── Listar reservas ──────────────────────────────────────────────────────────
 
 describe('GET /api/users/:id/reservations', () => {
