@@ -129,8 +129,41 @@ const sendAppointmentCancelledEmail = async ({ toEmail, toName, otherPartyName, 
     }
 };
 
+/**
+ * Recuerda al paciente que tiene un turno en ~24 hs.
+ * Se llama desde el cron job — no bloquea el caller.
+ */
+const sendAppointmentReminderEmail = async ({ patientEmail, patientName, doctorName, startTime }) => {
+    const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    const subject = 'Recordatorio de turno mañana — MediConnect';
+    const dateStr = formatAppointmentDate(startTime);
+
+    const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #2563eb;">⏰ Recordatorio de turno</h2>
+            <p>Hola <strong>${patientName}</strong>,</p>
+            <p>Te recordamos que tenés un turno mañana con el Dr./Dra. <strong>${doctorName}</strong>.</p>
+            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0; font-size: 16px;"><strong>📅 ${dateStr}</strong></p>
+            </div>
+            <p style="color: #6b7280; font-size: 14px;">Si no podés asistir, cancelá tu turno desde tu <a href="${process.env.APP_URL || 'http://localhost:5173'}/dashboard" style="color: #2563eb;">dashboard</a> para liberar el horario.</p>
+        </div>
+    `;
+    const text = `Hola ${patientName},\n\nRecordatorio: tenés un turno mañana con el Dr./Dra. ${doctorName} el ${dateStr}.\n\nSi no podés asistir, cancelalo desde tu dashboard.`;
+
+    try {
+        const client = getClient();
+        await client.emails.send({ from, to: patientEmail, subject, html, text });
+        return true;
+    } catch (err) {
+        logger.error({ err }, 'Appointment reminder email failed to send');
+        return false;
+    }
+};
+
 module.exports = {
     sendPasswordResetEmail,
     sendAppointmentConfirmedEmail,
     sendAppointmentCancelledEmail,
+    sendAppointmentReminderEmail,
 };

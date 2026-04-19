@@ -57,9 +57,10 @@ model Appointment {
   doctorId    Int
   status      AppointmentStatus @default(PENDING)
   notes       String?
-  reason      String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  reason          String?
+  reminderSentAt  DateTime?         // null = reminder no enviado; seteado = ya enviado (idempotente)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Restrict)
   patient   User      @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
@@ -70,6 +71,7 @@ model Appointment {
   @@index([doctorId])
   @@index([date])
   @@index([status])
+  @@index([reminderSentAt])
 }
 
 model TimeBlock {
