@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { useToast } from '@/context/ToastContext';
+import BulkTimeBlocksModal from './BulkTimeBlocksModal';
 
 interface TimeBlockWithDoctor {
   id: number;
@@ -39,6 +40,7 @@ export default function TimeBlocksPanel() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -139,12 +141,20 @@ export default function TimeBlocksPanel() {
           Bloques de tiempo
           {!loading && <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-2">({total} total)</span>}
         </h2>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
-        >
-          {showForm ? 'Cancelar' : '+ Nuevo bloque'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowBulkModal(true)}
+            className="text-sm bg-purple-600 text-white px-4 py-1.5 rounded-lg hover:bg-purple-700"
+          >
+            Crear en masa
+          </button>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700"
+          >
+            {showForm ? 'Cancelar' : '+ Nuevo bloque'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -220,6 +230,18 @@ export default function TimeBlocksPanel() {
             );
           })}
         </div>
+      )}
+
+      {showBulkModal && (
+        <BulkTimeBlocksModal
+          doctors={doctors}
+          onClose={() => setShowBulkModal(false)}
+          onSuccess={() => {
+            setPage(1);
+            fetchBlocks(1);
+            fetchAllDoctors().then(setDoctors);
+          }}
+        />
       )}
 
       {/* Paginación */}

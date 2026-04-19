@@ -264,8 +264,97 @@ const promoteToDoctorService = async (userId, { specialty, specialties, hospital
     });
 };
 
+/**
+ * Crea bloques de tiempo en masa para un doctor.
+ * Genera slots a partir del rango de fechas, días de la semana, horario y duración.
+ * Usa createMany({ skipDuplicates: true }) — devuelve { created, skipped, total }.
+ */
+const bulkCreateTimeBlocks = async ({ doctorId, startDate, endDate, daysOfWeek, startHour, endHour, slotDurationMin }) => {
+    // Validar que slotDuration divide exactamente el rango horario
+    const rangeMinutes = (endHour - startHour) * 60;
+    if (rangeMinutes % slotDurationMin !== 0) {
+        const e = new Error(`La duración del slot (${slotDurationMin} min) no divide exactamente el rango horario (${rangeMinutes} min). Usá: ${
+            [15, 20, 30, 45, 60, 90, 120].filter(d => rangeMinutes % d === 0).join(', ') || 'ningún valor estándar'
+        }.`);
+        e.status = 400;
+        e.code = 'INVALID_SLOT_DURATION';
+        throw e;
+    }
+
+    // Validar que el doctor existe y tiene rol DOCTOR
+    const doctor = await prisma.user.findUnique({ where: { id: Number(doctorId) } });
+    if (!doctor || doctor.role !== 'DOCTOR') {
+        const e = new Error('El usuario no es un doctor válido.');
+        e.status = 400;
+        e.code = 'NOT_A_DOCTOR';
+        throw e;
+    }
+
+    // Generar todos los slots dentro del rango
+    const now = new Date();
+    const slots = [];
+
+    const current = new Date(startDate);
+    current.setUTCHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setUTCHours(0, 0, 0, 0);
+
+    while (current <= end) {
+        if (daysOfWeek.includes(current.getUTCDay())) {
+            for (let minOffset = 0; minOffset < rangeMinutes; minOffset += slotDurationMin) {
+                const slotStart = new Date(current);
+                slotStart.setUTCHours(startHour, minOffset, 0, 0);
+                const slotEnd = new Date(slotStart);
+                slotEnd.setUTCMinutes(slotEnd.getUTCMinutes() + slotDurationMin);
+
+                // Saltar slots pasados
+                if (slotStart <= now) continue;
+
+                const date = new Date(slotStart);
+                date.setUTCHours(0, 0, 0, 0);
+
+                slots.push({
+                    doctorId: Number(doctorId),
+                    startTime: slotStart,
+                    endTime: slotEnd,
+                    date,
+                });
+            }
+        }
+        current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    // Validar que quedan slots válidos
+    if (slots.length === 0) {
+        const e = new Error('No hay slots válidos en el rango especificado (todos están en el pasado o ningún día coincide).');
+        e.status = 400;
+        e.code = 'NO_VALID_SLOTS';
+        throw e;
+    }
+
+    // Cap de 500 slots por request
+    if (slots.length > 500) {
+        const e = new Error(`Se generarían ${slots.length} slots. El máximo permitido es 500. Reducí el rango de fechas o aumentá la duración del slot.`);
+        e.status = 400;
+        e.code = 'TOO_MANY_SLOTS';
+        throw e;
+    }
+
+    const result = await prisma.timeBlock.createMany({
+        data: slots,
+        skipDuplicates: true,
+    });
+
+    return {
+        created: result.count,
+        skipped: slots.length - result.count,
+        total: slots.length,
+    };
+};
+
 module.exports = {
     createTimeBlockService,
+    bulkCreateTimeBlocks,
     listReservationsService,
     getUsersService,
     getUserIdService,

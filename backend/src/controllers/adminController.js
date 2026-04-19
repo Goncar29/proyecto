@@ -1,4 +1,5 @@
 const { createTimeBlockService,
+    bulkCreateTimeBlocks,
     listReservationsService,
     getUsersService,
     getUserIdService,
@@ -104,4 +105,13 @@ const promoteToDoctor = async (req, res, next) => {
     }
 };
 
-module.exports = { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor };
+const bulkCreateTimeBlocksHandler = async (req, res, next) => {
+    try {
+        const result = await bulkCreateTimeBlocks(req.body);
+        res.status(201).json(result);
+    } catch (error) {
+        return next(error);
+    }
+};
+
+module.exports = { createTimeBlock, bulkCreateTimeBlocksHandler, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor };

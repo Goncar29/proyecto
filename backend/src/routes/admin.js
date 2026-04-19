@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { createTimeBlock, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor } = require('../controllers/adminController');
+const { createTimeBlock, bulkCreateTimeBlocksHandler, listReservations, getUsers, getUserId, updateUserId, deleteUserId, toggleUserStatus, promoteToDoctor } = require('../controllers/adminController');
 const { getAuditLogsController } = require('../controllers/auditController');
 const { authenticateToken, authorizeRole } = require('../middlewares/auth');
 const auditMiddleware = require('../middlewares/auditMiddleware');
@@ -7,12 +7,14 @@ const validate = require('../middlewares/validate');
 const { auditQuerySchema } = require('../schemas/auditSchema');
 const { promoteDoctorSchema } = require('../schemas/promoteDoctorSchema');
 const { adminUpdateUserSchema } = require('../schemas/usersSchema');
+const { bulkCreateTimeBlockSchema } = require('../schemas/timeBlockSchemas');
 
 const router = Router();
 
 router.use(authenticateToken, authorizeRole(['admin']));
 
 router.post('/time-blocks', auditMiddleware('Admin crear bloque de tiempo'), createTimeBlock);
+router.post('/time-blocks/bulk', validate(bulkCreateTimeBlockSchema), auditMiddleware('Admin crear bloques masivos'), bulkCreateTimeBlocksHandler);
 router.get('/reservations', auditMiddleware('Admin listar reservas'), listReservations);
 
 router.get('/users', auditMiddleware('Admin listar usuarios'), getUsers);
