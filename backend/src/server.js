@@ -27,8 +27,6 @@ process.on('SIGTERM', async () => {
     process.exit(0);
 });
 
-const log = require('./utils/logger');
-
 app.listen(PORT, () => {
     log.info({ port: PORT }, 'Server listening');
 
