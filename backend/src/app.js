@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const routes = require('./routes');
 const errorHandler = require('./middlewares/errorHandler');
@@ -50,11 +51,13 @@ app.use('/api', routes);
 
 // Serve frontend static files in production
 const frontendDist = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendDist));
-app.get('{*path}', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path === '/health') return next();
-    res.sendFile(path.join(frontendDist, 'index.html'));
-});
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.get('{*path}', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path === '/health') return next();
+        res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+}
 
 // Manejo de errores
 app.use(errorHandler);
