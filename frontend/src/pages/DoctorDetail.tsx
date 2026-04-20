@@ -100,9 +100,8 @@ export default function DoctorDetailPage() {
     setError('');
     setBooking(timeBlockId);
     try {
-      await api.post(`/users/${user.id}/reservations`, {
+      await api.post(`/users/${user.id}/appointments`, {
         doctorId: Number(id),
-        patientId: user.id,
         timeBlockId,
         reason: reason || undefined,
       });
