@@ -1,9 +1,8 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { config } from 'dotenv'
-/// <reference types="vitest" />
 
 // Load .env from repo root (one level up from frontend/).
 // override: true — ensures BACKEND_PORT from .env wins over any PORT injected by

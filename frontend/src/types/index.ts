@@ -4,6 +4,7 @@ export interface User {
   name: string;
   role: 'PATIENT' | 'DOCTOR' | 'ADMIN';
   createdAt?: string;
+  photoUrl?: string;
 }
 
 export interface DoctorProfile {

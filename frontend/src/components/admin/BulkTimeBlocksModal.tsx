@@ -41,7 +41,7 @@ function previewSlots(
   const now = new Date();
   const end = new Date(endDate + 'T00:00:00Z');
   const current = new Date(startDate + 'T00:00:00Z');
-  const slotsPerDay = rangeMin / slotDurationMin;
+
   let count = 0;
 
   while (current <= end) {

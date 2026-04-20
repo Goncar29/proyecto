@@ -1,5 +1,5 @@
-import { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { type ReactNode } from 'react';
+import { render, type RenderOptions } from '@testing-library/react';
 import { AuthProvider } from '@/context/AuthContext';
 
 /**
@@ -7,10 +7,10 @@ import { AuthProvider } from '@/context/AuthContext';
  * Use this for testing components that need authentication context.
  */
 const customRender = (
-  ui: ReactElement,
+  ui: ReactNode,
   options?: Omit<RenderOptions, 'wrapper'>,
 ) => {
-  const Wrapper = ({ children }: { children: ReactElement }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <AuthProvider>{children}</AuthProvider>
   );
 
