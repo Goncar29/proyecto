@@ -44,8 +44,7 @@ exports.cancelAppointment = async (req, res, next) => {
 
         // Notificar a la otra parte (fire-and-forget — no bloquea la respuesta)
         const callerRole = req.user.role?.toLowerCase();
-        const cancelledBy = callerRole === 'patient' ? 'patient' : 'doctor';
-        if (cancelledBy === 'doctor') {
+        if (callerRole === 'doctor') {
             // Doctor cancela → avisa al paciente
             sendAppointmentCancelledEmail({
                 toEmail: appt.patient.email,
@@ -55,7 +54,7 @@ exports.cancelAppointment = async (req, res, next) => {
                 cancelledBy: 'doctor',
                 reason: appt.reason,
             }).catch(() => {});
-        } else if (cancelledBy === 'patient') {
+        } else if (callerRole === 'patient') {
             // Paciente cancela → avisa al doctor
             sendAppointmentCancelledEmail({
                 toEmail: appt.doctor.email,
@@ -63,6 +62,24 @@ exports.cancelAppointment = async (req, res, next) => {
                 otherPartyName: appt.patient.name,
                 startTime: appt.timeBlock.startTime,
                 cancelledBy: 'patient',
+                reason: appt.reason,
+            }).catch(() => {});
+        } else {
+            // Admin cancela → avisa a ambas partes
+            sendAppointmentCancelledEmail({
+                toEmail: appt.patient.email,
+                toName: appt.patient.name,
+                otherPartyName: null,
+                startTime: appt.timeBlock.startTime,
+                cancelledBy: 'admin',
+                reason: appt.reason,
+            }).catch(() => {});
+            sendAppointmentCancelledEmail({
+                toEmail: appt.doctor.email,
+                toName: appt.doctor.name,
+                otherPartyName: null,
+                startTime: appt.timeBlock.startTime,
+                cancelledBy: 'admin',
                 reason: appt.reason,
             }).catch(() => {});
         }

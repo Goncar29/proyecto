@@ -106,7 +106,11 @@ const sendAppointmentCancelledEmail = async ({ toEmail, toName, otherPartyName, 
     const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
     const subject = 'Tu turno fue cancelado — MediConnect';
     const dateStr = formatAppointmentDate(startTime);
-    const whoLabel = cancelledBy === 'doctor' ? `el Dr./Dra. ${otherPartyName}` : `el paciente ${otherPartyName}`;
+    const whoLabel = cancelledBy === 'doctor'
+        ? `el Dr./Dra. ${otherPartyName}`
+        : cancelledBy === 'admin'
+            ? 'la administración'
+            : `el paciente ${otherPartyName}`;
 
     const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
