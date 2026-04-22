@@ -23,15 +23,21 @@ function buildCalendar(year: number, month: number) {
 export default function AvailabilityCalendar({ slots, booking, isPatient, onBook }: Props) {
   const today = new Date();
 
-  // Build map: YYYY-MM-DD → count of slots
+  // Filter out slots whose startTime has already passed
+  const futureSlots = React.useMemo(
+    () => slots.filter(s => new Date(s.startTime) > new Date()),
+    [slots],
+  );
+
+  // Build map: YYYY-MM-DD → count of future slots
   const slotsByDate = React.useMemo(() => {
     const map = new Map<string, number>();
-    for (const s of slots) {
+    for (const s of futureSlots) {
       const d = s.date.split('T')[0];
       map.set(d, (map.get(d) ?? 0) + 1);
     }
     return map;
-  }, [slots]);
+  }, [futureSlots]);
 
   // Derive initial month: jump to the first month that has available slots
   const initialMonth = React.useMemo(() => {
@@ -79,7 +85,7 @@ export default function AvailabilityCalendar({ slots, booking, isPatient, onBook
   const monthName = new Date(viewYear, viewMonth).toLocaleString('es-AR', { month: 'long', year: 'numeric' });
 
   const slotsForSelected = selectedDate
-    ? slots.filter(s => s.date.split('T')[0] === selectedDate)
+    ? futureSlots.filter(s => s.date.split('T')[0] === selectedDate)
     : [];
 
   const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];

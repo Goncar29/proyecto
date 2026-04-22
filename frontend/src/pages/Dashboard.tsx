@@ -6,6 +6,7 @@ import { ListSkeleton } from '@/components/Skeleton';
 import ReviewForm from '@/components/ReviewForm';
 import DoctorAvatar from '@/components/DoctorAvatar';
 import ReschedulePicker from '@/components/ReschedulePicker';
+import ConfirmModal from '@/components/ConfirmModal';
 import type { Appointment, PaginatedResponse } from '@/types';
 
 const PAGE_SIZE = 10;
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [reviewed, setReviewed] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [reschedulingAppt, setReschedulingAppt] = useState<Appointment | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isDoctor = user?.role === 'DOCTOR';
@@ -374,7 +376,7 @@ export default function Dashboard() {
                     {/* Cancel — both roles, while not terminal */}
                     {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
                       <button
-                        onClick={() => handleCancel(a.id)}
+                        onClick={() => setCancellingId(a.id)}
                         className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-700 px-3 py-1 rounded-lg"
                       >
                         Cancelar
@@ -421,6 +423,22 @@ export default function Dashboard() {
           )}
         </>
       )}
+      {/* Cancel confirmation modal */}
+      {cancellingId !== null && (
+        <ConfirmModal
+          title="Cancelar cita"
+          message="¿Estás seguro de que querés cancelar esta cita? Esta acción no se puede deshacer."
+          confirmLabel="Sí, cancelar"
+          cancelLabel="Volver"
+          variant="danger"
+          onConfirm={() => {
+            handleCancel(cancellingId);
+            setCancellingId(null);
+          }}
+          onCancel={() => setCancellingId(null)}
+        />
+      )}
+
       {/* Reschedule modal */}
       {reschedulingAppt && user && (
         <ReschedulePicker

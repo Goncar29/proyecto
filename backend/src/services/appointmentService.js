@@ -54,6 +54,12 @@ exports.createAppointment = async (data) => {
             throw e;
         }
 
+        if (timeBlock.startTime <= new Date()) {
+            const e = new Error('No se puede reservar un horario que ya pasó.');
+            e.status = 409; e.code = 'TIME_BLOCK_EXPIRED';
+            throw e;
+        }
+
         const existingAppointment = await tx.appointment.findUnique({
             where: { timeBlockId: data.timeBlockId },
         });

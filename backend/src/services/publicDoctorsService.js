@@ -235,10 +235,13 @@ async function getDoctorAvailability(userId, query) {
     const from = query.from ? new Date(query.from) : startOfToday();
     const to = query.to ? new Date(query.to) : addDays(from, 30);
 
+    const now = new Date();
+
     const blocks = await prisma.timeBlock.findMany({
         where: {
             doctorId: profile.userId,
             date: { gte: from, lte: to },
+            startTime: { gt: now },
             OR: [
                 { appointment: null },
                 { appointment: { status: 'CANCELLED' } },
