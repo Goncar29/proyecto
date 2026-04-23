@@ -2,12 +2,164 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+/* ── Fonts ── */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 }
 
+/* ── Theme tokens (light) ── */
+:root {
+  --color-primary: #0F6FDE;
+  --color-primary-hover: #0B5AB8;
+  --color-primary-light: #EBF3FE;
+  --color-primary-subtle: #D4E6FC;
+
+  --color-surface: #FAFBFD;
+  --color-card: #FFFFFF;
+  --color-card-hover: #F5F7FA;
+
+  --color-text: #1A1D23;
+  --color-text-secondary: #5A6170;
+  --color-text-muted: #8B90A0;
+
+  --color-border: #E2E5EB;
+  --color-border-strong: #CDD1D9;
+
+  --color-success: #0D7C3F;
+  --color-success-light: #ECFDF3;
+  --color-danger: #C93B3B;
+  --color-danger-light: #FEF2F2;
+  --color-warning: #B45309;
+  --color-warning-light: #FFFBEB;
+
+  --color-accent: #0D9488;
+  --color-accent-light: #ECFDF5;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+}
+
+/* ── Theme tokens (dark) ── */
+.dark {
+  --color-primary: #5BA3F5;
+  --color-primary-hover: #7DB8F8;
+  --color-primary-light: #172136;
+  --color-primary-subtle: #1C2D4A;
+
+  --color-surface: #111318;
+  --color-card: #1A1D24;
+  --color-card-hover: #22252E;
+
+  --color-text: #F0F1F3;
+  --color-text-secondary: #9BA1AE;
+  --color-text-muted: #6B7080;
+
+  --color-border: #2D3039;
+  --color-border-strong: #3D424D;
+
+  --color-success: #34D47B;
+  --color-success-light: #0D2818;
+  --color-danger: #F87171;
+  --color-danger-light: #301818;
+  --color-warning: #FBBF24;
+  --color-warning-light: #2D2006;
+
+  --color-accent: #2DD4BF;
+  --color-accent-light: #0D2D28;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Base ── */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Focus visible ── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Skip to content (a11y) ── */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  border-radius: 0 0 var(--radius-md) 0;
+}
+.skip-to-content:focus {
+  left: 0;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Animations ── */
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(1rem); }
   to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Scrollbar (subtle) ── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }

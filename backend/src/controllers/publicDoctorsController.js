@@ -44,3 +44,12 @@ exports.getAvailability = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.getStats = async (_req, res, next) => {
+    try {
+        const result = await service.getPublicStats();
+        res.status(200).json(result);
+    } catch (err) {
+        next(err);
+    }
+};

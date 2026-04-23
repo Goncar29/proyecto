@@ -19,6 +19,24 @@ interface DoctorProfile {
   photoUrl: string | null;
 }
 
+const statusBorder: Record<string, string> = {
+  PENDING:   'border-l-[var(--color-warning)]',
+  CONFIRMED: 'border-l-[var(--color-success)]',
+  CANCELLED: 'border-l-[var(--color-danger)]',
+  COMPLETED: 'border-l-[var(--color-primary)]',
+};
+
+const statusLabel: Record<string, string> = {
+  PENDING: 'Pendiente', CONFIRMED: 'Confirmada', CANCELLED: 'Cancelada', COMPLETED: 'Completada',
+};
+
+const statusBadge: Record<string, string> = {
+  PENDING:   'bg-[var(--color-warning-light)] text-[var(--color-warning)]',
+  CONFIRMED: 'bg-[var(--color-success-light)] text-[var(--color-success)]',
+  CANCELLED: 'bg-[var(--color-danger-light)] text-[var(--color-danger)]',
+  COMPLETED: 'bg-[var(--color-primary-light)] text-[var(--color-primary)]',
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -49,10 +67,7 @@ export default function Dashboard() {
     else params.set('to', now);
     if (statusFilter) params.set('status', statusFilter);
     api.get<PaginatedResponse<Appointment>>(`/users/${user.id}/appointments?${params}`)
-      .then(res => {
-        setAppointments(res.items);
-        setTotal(res.total);
-      })
+      .then(res => { setAppointments(res.items); setTotal(res.total); })
       .finally(() => setLoading(false));
   }, [user, page, statusFilter, tab]);
 
@@ -63,7 +78,7 @@ export default function Dashboard() {
         setDoctorProfile(d);
         setProfileForm({ specialty: d.specialty, hospital: d.hospital ?? '', location: d.location ?? '', bio: d.bio ?? '', photoUrl: d.photoUrl ?? '' });
       })
-      .catch(() => {}); // perfil puede no existir aún si fue recién promovido
+      .catch(() => {});
   }, [user]);
 
   const handleSaveProfile = async () => {
@@ -113,39 +128,34 @@ export default function Dashboard() {
     }
   };
 
-  const statusColor: Record<string, string> = {
-    PENDING:   'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    CONFIRMED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    COMPLETED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  };
-
-  const statusLabel: Record<string, string> = {
-    PENDING: 'Pendiente', CONFIRMED: 'Confirmada', CANCELLED: 'Cancelada', COMPLETED: 'Completada',
-  };
-
   const isPastAppointment = (a: Appointment) =>
     a.timeBlock ? new Date(a.timeBlock.endTime) < new Date() : false;
 
+  const inputClass = 'w-full px-3 py-2 text-sm rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-primary)] outline-none';
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-        {isDoctor ? 'Mi agenda' : 'Dashboard'}
+      <h1
+        className="text-3xl font-bold text-[var(--color-text)] mb-1"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        {isDoctor ? 'Mi agenda' : 'Mis turnos'}
       </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        {isDoctor
-          ? `Dr. ${user?.name} — gestioná tus citas`
-          : `Bienvenido, ${user?.name}`}
+      <p className="text-[var(--color-text-secondary)] mb-6">
+        {isDoctor ? `Dr. ${user?.name} — gestioná tus citas` : `Bienvenido, ${user?.name}`}
       </p>
 
-      {/* Sección Mi perfil — solo para doctores */}
+      {/* Doctor profile section */}
       {isDoctor && doctorProfile && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 mb-6">
+        <div
+          className="rounded-[var(--radius-xl)] bg-[var(--color-card)] p-5 mb-6"
+          style={{ boxShadow: 'var(--shadow-card)' }}
+        >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mi perfil</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "'DM Sans', sans-serif" }}>Mi perfil</h2>
             <button
               onClick={() => setEditingProfile(e => !e)}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-sm font-medium text-[var(--color-primary)] hover:underline underline-offset-4"
             >
               {editingProfile ? 'Cancelar' : 'Editar'}
             </button>
@@ -154,58 +164,28 @@ export default function Dashboard() {
           {editingProfile ? (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Foto (URL)</label>
-                <input
-                  type="url"
-                  placeholder="https://ejemplo.com/foto.jpg"
-                  value={profileForm.photoUrl ?? ''}
-                  onChange={e => setProfileForm(f => ({ ...f, photoUrl: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Foto (URL)</label>
+                <input type="url" placeholder="https://ejemplo.com/foto.jpg" value={profileForm.photoUrl ?? ''} onChange={e => setProfileForm(f => ({ ...f, photoUrl: e.target.value }))} className={inputClass} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Especialidad</label>
-                <input
-                  type="text"
-                  value={profileForm.specialty ?? ''}
-                  onChange={e => setProfileForm(f => ({ ...f, specialty: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Especialidad</label>
+                <input type="text" value={profileForm.specialty ?? ''} onChange={e => setProfileForm(f => ({ ...f, specialty: e.target.value }))} className={inputClass} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Hospital</label>
-                  <input
-                    type="text"
-                    value={profileForm.hospital ?? ''}
-                    onChange={e => setProfileForm(f => ({ ...f, hospital: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Hospital</label>
+                  <input type="text" value={profileForm.hospital ?? ''} onChange={e => setProfileForm(f => ({ ...f, hospital: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Ubicación</label>
-                  <input
-                    type="text"
-                    value={profileForm.location ?? ''}
-                    onChange={e => setProfileForm(f => ({ ...f, location: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
+                  <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Ubicación</label>
+                  <input type="text" value={profileForm.location ?? ''} onChange={e => setProfileForm(f => ({ ...f, location: e.target.value }))} className={inputClass} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Biografía</label>
-                <textarea
-                  rows={3}
-                  value={profileForm.bio ?? ''}
-                  onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                />
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Biografía</label>
+                <textarea rows={3} value={profileForm.bio ?? ''} onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))} className={`${inputClass} resize-none`} />
               </div>
-              <button
-                onClick={handleSaveProfile}
-                disabled={savingProfile}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
-              >
+              <button onClick={handleSaveProfile} disabled={savingProfile} className="px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors">
                 {savingProfile ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
@@ -213,47 +193,43 @@ export default function Dashboard() {
             <div className="flex items-start gap-4">
               <DoctorAvatar name={user?.name ?? ''} photoUrl={doctorProfile.photoUrl} size="lg" />
               <div className="text-sm space-y-1">
-                <p className="font-medium text-gray-900 dark:text-white">{doctorProfile.specialty}</p>
-                {doctorProfile.hospital && <p className="text-gray-500 dark:text-gray-400">{doctorProfile.hospital}</p>}
-                {doctorProfile.location && <p className="text-gray-500 dark:text-gray-400">{doctorProfile.location}</p>}
-                {doctorProfile.bio && <p className="text-gray-600 dark:text-gray-300 mt-2">{doctorProfile.bio}</p>}
-                {!doctorProfile.photoUrl && (
-                  <p className="text-orange-500 dark:text-orange-400 text-xs mt-1">
-                    Sin foto de perfil — agregá una URL en "Editar"
-                  </p>
-                )}
+                <p className="font-medium text-[var(--color-text)]">{doctorProfile.specialty}</p>
+                {doctorProfile.hospital && <p className="text-[var(--color-text-muted)]">{doctorProfile.hospital}</p>}
+                {doctorProfile.location && <p className="text-[var(--color-text-muted)]">{doctorProfile.location}</p>}
+                {doctorProfile.bio && <p className="text-[var(--color-text-secondary)] mt-2">{doctorProfile.bio}</p>}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Tabs Próximos / Historial */}
-      <div className="flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-4 border-b border-[var(--color-border)]">
         {(['upcoming', 'history'] as const).map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setPage(1); setStatusFilter(''); }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               tab === t
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
             }`}
           >
-            {t === 'upcoming' ? '📅 Próximas' : '🕐 Historial'}
+            {t === 'upcoming' ? 'Próximas' : 'Historial'}
           </button>
         ))}
       </div>
 
-      {/* Filters + count row */}
+      {/* Filters */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-[var(--color-text-muted)]">
           {total > 0 ? `${total} cita${total !== 1 ? 's' : ''}` : ''}
         </span>
         <select
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-          className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Filtrar por estado"
+          className="text-sm rounded-[var(--radius-md)] px-3 py-1.5 border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
         >
           <option value="">Todos los estados</option>
           {tab === 'upcoming' ? (
@@ -273,7 +249,7 @@ export default function Dashboard() {
       {loading ? (
         <ListSkeleton count={4} />
       ) : appointments.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-[var(--color-text-muted)] py-8 text-center">
           {statusFilter
             ? 'No hay citas con ese estado.'
             : tab === 'upcoming'
@@ -284,13 +260,17 @@ export default function Dashboard() {
         <>
           <div className="space-y-3">
             {appointments.map(a => (
-              <div key={a.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+              <div
+                key={a.id}
+                className={`rounded-[var(--radius-lg)] bg-[var(--color-card)] p-4 border-l-[3px] ${statusBorder[a.status] ?? 'border-l-gray-300'}`}
+                style={{ boxShadow: 'var(--shadow-card)' }}
+              >
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <p className="font-medium text-[var(--color-text)]">
                       Cita #{a.id}
                       {a.timeBlock && (
-                        <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">
+                        <span className="text-[var(--color-text-muted)] font-normal ml-2 text-sm">
                           {new Date(a.timeBlock.date).toLocaleDateString('es-AR')}
                           {' — '}
                           {new Date(a.timeBlock.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
@@ -300,31 +280,28 @@ export default function Dashboard() {
                       )}
                     </p>
 
-                    {/* Participant info — show the other party */}
                     {isDoctor && a.patient && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        Paciente:{' '}
-                        <span className="font-medium text-gray-700 dark:text-gray-300">{a.patient.name}</span>
+                      <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+                        Paciente: <span className="font-medium text-[var(--color-text-secondary)]">{a.patient.name}</span>
                       </p>
                     )}
                     {!isDoctor && a.doctor && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                        Doctor:{' '}
-                        <span className="font-medium text-gray-700 dark:text-gray-300">{a.doctor.name}</span>
+                      <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+                        Doctor: <span className="font-medium text-[var(--color-text-secondary)]">{a.doctor.name}</span>
                       </p>
                     )}
 
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] ?? ''}`}>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge[a.status] ?? ''}`}>
                         {statusLabel[a.status] ?? a.status}
                       </span>
                       {a.status === 'CONFIRMED' && isPastAppointment(a) && isDoctor && (
-                        <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">
+                        <span className="text-xs text-[var(--color-warning)] font-medium">
                           Horario pasado — marcá como completada
                         </span>
                       )}
                       {a.notes && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        <span className="text-xs text-[var(--color-text-muted)] italic">
                           Nota: {a.notes}
                         </span>
                       )}
@@ -332,55 +309,28 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* Review — patient, completed, not yet reviewed */}
                     {a.status === 'COMPLETED' && !isDoctor && !reviewed.has(a.id) && (
-                      <button
-                        onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
-                      >
+                      <ActionBtn onClick={() => setReviewingId(reviewingId === a.id ? null : a.id)} variant="primary">
                         {reviewingId === a.id ? 'Cerrar' : 'Dejar review'}
-                      </button>
+                      </ActionBtn>
                     )}
                     {reviewed.has(a.id) && (
-                      <span className="text-sm text-green-600 dark:text-green-400">Review enviada</span>
+                      <span className="text-sm text-[var(--color-success)]">Review enviada</span>
                     )}
 
-                    {/* Doctor actions */}
                     {a.status === 'PENDING' && isDoctor && (
-                      <button
-                        onClick={() => handleConfirm(a.id)}
-                        className="text-sm text-green-600 dark:text-green-400 hover:text-green-800 border border-green-200 dark:border-green-700 px-3 py-1 rounded-lg"
-                      >
-                        Confirmar
-                      </button>
+                      <ActionBtn onClick={() => handleConfirm(a.id)} variant="success">Confirmar</ActionBtn>
                     )}
                     {a.status === 'CONFIRMED' && isDoctor && (
-                      <button
-                        onClick={() => handleComplete(a.id)}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 px-3 py-1 rounded-lg"
-                      >
-                        Completar
-                      </button>
+                      <ActionBtn onClick={() => handleComplete(a.id)} variant="primary">Completar</ActionBtn>
                     )}
 
-                    {/* Reschedule — patient only, PENDING or CONFIRMED */}
                     {(a.status === 'PENDING' || a.status === 'CONFIRMED') && !isDoctor && (
-                      <button
-                        onClick={() => setReschedulingAppt(a)}
-                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-800 border border-purple-200 dark:border-purple-700 px-3 py-1 rounded-lg"
-                      >
-                        Reprogramar
-                      </button>
+                      <ActionBtn onClick={() => setReschedulingAppt(a)} variant="secondary">Reprogramar</ActionBtn>
                     )}
 
-                    {/* Cancel — both roles, while not terminal */}
                     {(a.status === 'PENDING' || a.status === 'CONFIRMED') && (
-                      <button
-                        onClick={() => setCancellingId(a.id)}
-                        className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-700 px-3 py-1 rounded-lg"
-                      >
-                        Cancelar
-                      </button>
+                      <ActionBtn onClick={() => setCancellingId(a.id)} variant="danger">Cancelar</ActionBtn>
                     )}
                   </div>
                 </div>
@@ -389,33 +339,29 @@ export default function Dashboard() {
                   <ReviewForm
                     doctorId={a.doctorId}
                     appointmentId={a.id}
-                    onSuccess={() => {
-                      setReviewingId(null);
-                      setReviewed(prev => new Set(prev).add(a.id));
-                    }}
+                    onSuccess={() => { setReviewingId(null); setReviewed(prev => new Set(prev).add(a.id)); }}
                   />
                 )}
               </div>
             ))}
           </div>
 
-          {/* Pagination controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <button
                 onClick={() => setPage(p => p - 1)}
                 disabled={page === 1}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2 text-sm rounded-[var(--radius-md)] border border-[var(--color-border)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--color-card-hover)] text-[var(--color-text-secondary)] transition-colors"
               >
                 ← Anterior
               </button>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-[var(--color-text-muted)]">
                 Página {page} de {totalPages}
               </span>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page === totalPages}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2 text-sm rounded-[var(--radius-md)] border border-[var(--color-border)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--color-card-hover)] text-[var(--color-text-secondary)] transition-colors"
               >
                 Siguiente →
               </button>
@@ -423,6 +369,7 @@ export default function Dashboard() {
           )}
         </>
       )}
+
       {/* Cancel confirmation modal */}
       {cancellingId !== null && (
         <ConfirmModal
@@ -431,10 +378,7 @@ export default function Dashboard() {
           confirmLabel="Sí, cancelar"
           cancelLabel="Volver"
           variant="danger"
-          onConfirm={() => {
-            handleCancel(cancellingId);
-            setCancellingId(null);
-          }}
+          onConfirm={() => { handleCancel(cancellingId); setCancellingId(null); }}
           onCancel={() => setCancellingId(null)}
         />
       )}
@@ -452,5 +396,22 @@ export default function Dashboard() {
         />
       )}
     </div>
+  );
+}
+
+function ActionBtn({ children, onClick, variant }: { children: React.ReactNode; onClick: () => void; variant: 'primary' | 'success' | 'danger' | 'secondary' }) {
+  const colors = {
+    primary: 'text-[var(--color-primary)] border-[var(--color-primary)]/30 hover:bg-[var(--color-primary-light)]',
+    success: 'text-[var(--color-success)] border-[var(--color-success)]/30 hover:bg-[var(--color-success-light)]',
+    danger: 'text-[var(--color-danger)] border-[var(--color-danger)]/30 hover:bg-[var(--color-danger-light)]',
+    secondary: 'text-[var(--color-text-secondary)] border-[var(--color-border)] hover:bg-[var(--color-card-hover)]',
+  };
+  return (
+    <button
+      onClick={onClick}
+      className={`text-sm font-medium border px-3 py-1 rounded-[var(--radius-md)] transition-colors ${colors[variant]}`}
+    >
+      {children}
+    </button>
   );
 }

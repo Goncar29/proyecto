@@ -15,6 +15,8 @@ const {
  * Mounted at /api/public/doctors (see routes/index.js).
  */
 
+router.get('/stats', controller.getStats);
+
 router.get('/', validate(listQuerySchema, { source: 'query' }), controller.list);
 
 router.get('/:id', controller.getById);

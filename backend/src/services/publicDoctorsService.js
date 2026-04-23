@@ -265,9 +265,24 @@ async function getDoctorAvailability(userId, query) {
     }));
 }
 
+/**
+ * GET /api/public/stats — aggregate numbers for the landing page.
+ */
+async function getPublicStats() {
+    const [doctorCount, appointmentCount, reviewCount] = await Promise.all([
+        prisma.doctorProfile.count({
+            where: { user: { role: 'DOCTOR', isActive: true, deletedAt: null } },
+        }),
+        prisma.appointment.count(),
+        prisma.review.count(),
+    ]);
+    return { doctorCount, appointmentCount, reviewCount };
+}
+
 module.exports = {
     listDoctors,
     getDoctorById,
     getDoctorReviews,
     getDoctorAvailability,
+    getPublicStats,
 };

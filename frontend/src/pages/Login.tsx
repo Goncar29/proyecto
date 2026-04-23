@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -34,46 +35,82 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Iniciar sesión</h1>
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <motion.div
+        className="w-full max-w-md rounded-[var(--radius-2xl)] bg-[var(--color-card)] p-8"
+        style={{ boxShadow: 'var(--shadow-card-hover)' }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <h1
+          className="text-2xl font-bold text-[var(--color-text)] mb-1"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
-      <div className="mt-4 flex items-center justify-between">
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
-          ¿No tenés cuenta? <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">Registrate</Link>
+          Iniciar sesión
+        </h1>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-6">
+          Ingresá tus credenciales para acceder a tu cuenta.
         </p>
-        <Link to="/forgot-password" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-          ¿Olvidaste tu contraseña?
-        </Link>
-      </div>
+
+        {error && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-[var(--radius-md)] bg-[var(--color-danger-light)] border border-[var(--color-danger)]/20 text-[var(--color-danger)] text-sm mb-4" role="alert">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="login-email" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">
+              Email
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="w-full px-4 py-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow"
+              placeholder="tu@email.com"
+            />
+          </div>
+          <div>
+            <label htmlFor="login-password" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">
+              Contraseña
+            </label>
+            <input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full px-4 py-2.5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-[var(--radius-md)] font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 transition-colors"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+
+        <div className="mt-5 flex items-center justify-between text-sm">
+          <p className="text-[var(--color-text-secondary)]">
+            ¿No tenés cuenta?{' '}
+            <Link to="/register" className="font-medium text-[var(--color-primary)] hover:underline underline-offset-4">Registrate</Link>
+          </p>
+          <Link to="/forgot-password" className="text-[var(--color-primary)] hover:underline underline-offset-4">
+            Olvidé mi contraseña
+          </Link>
+        </div>
+      </motion.div>
     </div>
   );
 }
