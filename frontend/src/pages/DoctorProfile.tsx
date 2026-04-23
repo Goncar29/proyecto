@@ -175,7 +175,7 @@ export default function DoctorProfilePage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mi perfil</h1>
         <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
           <span>⭐ {profile.avgRating.toFixed(1)}</span>
-          <span>{profile.reviewCount} reviews</span>
+          <span>{profile.reviewCount} reseñas</span>
         </div>
       </div>
 

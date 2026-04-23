@@ -99,7 +99,7 @@ export default function Home() {
         >
           <StatCard value={stats.doctorCount} label="Doctores" />
           <StatCard value={stats.appointmentCount} label="Citas gestionadas" />
-          <StatCard value={stats.reviewCount} label="Reviews" />
+          <StatCard value={stats.reviewCount} label="Reseñas" />
         </motion.section>
       )}
 

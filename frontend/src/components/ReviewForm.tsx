@@ -31,7 +31,7 @@ export default function ReviewForm({ doctorId, appointmentId, onSuccess }: Props
     <form onSubmit={handleSubmit} className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
       {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600 dark:text-gray-400">Rating:</label>
+        <label className="text-sm text-gray-600 dark:text-gray-400">Calificación:</label>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map(n => (
             <button

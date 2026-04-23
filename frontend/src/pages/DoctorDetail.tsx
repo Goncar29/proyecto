@@ -146,7 +146,7 @@ export default function DoctorDetailPage() {
             {doctor.location && <p className="text-gray-500 dark:text-gray-400 text-sm">{doctor.location}</p>}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-yellow-500 text-lg">{'★'.repeat(Math.round(doctor.avgRating))}</span>
-              <span className="text-gray-600 dark:text-gray-400">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reviews)</span>
+              <span className="text-gray-600 dark:text-gray-400">{doctor.avgRating.toFixed(1)} ({doctor.reviewCount} reseñas)</span>
             </div>
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function DoctorDetailPage() {
 
       {reviews.length > 0 && (
         <>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">Reviews</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">Reseñas</h2>
           <div className="space-y-3">
             {reviews.map(r => {
               const myVote = userVotes[r.id] ?? null;
