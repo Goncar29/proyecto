@@ -24,7 +24,7 @@ router.delete('/users/:id', auditMiddleware('Admin eliminar usuario'), deleteUse
 router.patch('/users/:id/status', auditMiddleware('Admin cambiar estado usuario'), toggleUserStatus);
 router.post('/users/:id/promote-to-doctor', validate(promoteDoctorSchema), auditMiddleware('Admin promover a doctor'), promoteToDoctor);
 
-router.get('/audit', validate(auditQuerySchema, { source: 'query' }), auditMiddleware('Admin listar auditoría'), getAuditLogsController);
+router.get('/audit', validate(auditQuerySchema, { source: 'query' }), getAuditLogsController);
 
 module.exports = router;
 
