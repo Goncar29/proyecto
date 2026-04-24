@@ -45,13 +45,11 @@ export interface Appointment {
 
 export interface Review {
   id: number;
-  doctorProfileId: number;
-  patientId: number;
-  appointmentId: number;
   rating: number;
   text: string;
   helpfulCount: number;
   createdAt: string;
+  patient?: { id: number; name: string };
 }
 
 export interface PaginatedResponse<T> {

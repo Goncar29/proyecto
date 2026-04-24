@@ -273,7 +273,7 @@ async function getPublicStats() {
         prisma.doctorProfile.count({
             where: { user: { role: 'DOCTOR', isActive: true, deletedAt: null } },
         }),
-        prisma.appointment.count(),
+        prisma.appointment.count({ where: { patient: { deletedAt: null }, doctor: { deletedAt: null } } }),
         prisma.review.count(),
     ]);
     return { doctorCount, appointmentCount, reviewCount };
