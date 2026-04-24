@@ -63,9 +63,12 @@ export default function Dashboard() {
     setLoading(true);
     const now = new Date().toISOString();
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
-    if (tab === 'upcoming') params.set('from', now);
-    else params.set('to', now);
-    if (statusFilter) params.set('status', statusFilter);
+    if (tab === 'upcoming') {
+      params.set('from', now);
+      if (statusFilter) params.set('status', statusFilter);
+    } else {
+      params.set('status', statusFilter || 'CANCELLED,COMPLETED');
+    }
     api.get<PaginatedResponse<Appointment>>(`/users/${user.id}/appointments?${params}`)
       .then(res => { setAppointments(res.items); setTotal(res.total); })
       .finally(() => setLoading(false));

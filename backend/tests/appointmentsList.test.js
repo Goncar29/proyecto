@@ -103,6 +103,24 @@ describe('GET /api/users/:id/appointments', () => {
         expect(res.status).toBe(400);
     });
 
+    it('rejects multi-status with invalid value', async () => {
+        const res = await request(app)
+            .get(`/api/users/${users.patient.id}/appointments?status=CONFIRMED,BOGUS`)
+            .set('Authorization', `Bearer ${tokens.patient}`);
+        expect(res.status).toBe(400);
+    });
+
+    it('accepts multi-status filter — all returned items match one of the statuses', async () => {
+        const res = await request(app)
+            .get(`/api/users/${users.patient.id}/appointments?status=CANCELLED,COMPLETED`)
+            .set('Authorization', `Bearer ${tokens.patient}`);
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('items');
+        for (const a of res.body.items) {
+            expect(['CANCELLED', 'COMPLETED']).toContain(a.status);
+        }
+    });
+
     it('patient cannot read another user appointments → 403', async () => {
         const res = await request(app)
             .get(`/api/users/${users.doctor.id}/appointments`)

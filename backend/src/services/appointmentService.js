@@ -19,7 +19,10 @@ exports.getUserAppointments = async (userId, query = {}) => {
     const where = {
         OR: [{ patientId: userId }, { doctorId: userId }],
     };
-    if (query.status) where.status = query.status;
+    if (query.status) {
+        const parts = query.status.split(',').map(s => s.trim()).filter(Boolean);
+        where.status = parts.length === 1 ? parts[0] : { in: parts };
+    }
     if (query.from || query.to) {
         where.timeBlock = { date: {} };
         if (query.from) where.timeBlock.date.gte = new Date(query.from);

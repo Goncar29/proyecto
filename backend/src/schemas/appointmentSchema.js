@@ -27,12 +27,19 @@ const createAppointmentSchema = Joi.object({
  * Query filter schema for GET /api/users/:id/appointments.
  * All fields optional. `from`/`to` bound the TimeBlock date window.
  */
+const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
+
 const listAppointmentsQuerySchema = Joi.object({
     status: Joi.string()
-        .valid('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')
+        .custom((value, helpers) => {
+            const parts = value.split(',').map(s => s.trim());
+            const invalid = parts.find(p => !VALID_STATUSES.includes(p));
+            if (invalid) return helpers.error('any.invalid');
+            return parts.length === 1 ? parts[0] : parts.join(',');
+        })
         .optional()
         .messages({
-            'any.only': 'El estado debe ser uno de: PENDING, CONFIRMED, CANCELLED, COMPLETED.',
+            'any.invalid': 'El estado debe ser uno de: PENDING, CONFIRMED, CANCELLED, COMPLETED.',
         }),
     from: Joi.date().iso().optional()
         .messages({ 'date.format': 'La fecha "desde" debe estar en formato ISO.' }),
