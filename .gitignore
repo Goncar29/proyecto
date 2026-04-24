@@ -112,3 +112,4 @@ claude_logs/
 .agents/skills
 skills-lock.json
 .atl/
+docs/

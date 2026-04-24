@@ -38,7 +38,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) { setName(user.name); setEmail(user.email); }
-  }, [user]);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
