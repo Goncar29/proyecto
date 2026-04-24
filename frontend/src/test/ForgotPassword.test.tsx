@@ -32,7 +32,7 @@ describe('ForgotPassword', () => {
   it('renderiza el formulario de email y el botón', () => {
     render(<MemoryRouter><ForgotPassword /></MemoryRouter>);
 
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Enviar link' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '← Volver a iniciar sesión' })).toBeInTheDocument();
   });
@@ -42,7 +42,7 @@ describe('ForgotPassword', () => {
 
     render(<MemoryRouter><ForgotPassword /></MemoryRouter>);
 
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@test.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar link' }));
 
     await waitFor(() => {
@@ -51,7 +51,7 @@ describe('ForgotPassword', () => {
 
     expect(mockToast).toHaveBeenCalledWith('Revisá tu bandeja de entrada', 'success');
     // El formulario ya no debe estar visible
-    expect(screen.queryByPlaceholderText('Email')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
   });
 
   it('muestra toast de error si el submit falla', async () => {
@@ -59,7 +59,7 @@ describe('ForgotPassword', () => {
 
     render(<MemoryRouter><ForgotPassword /></MemoryRouter>);
 
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@test.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar link' }));
 
     await waitFor(() => {
@@ -67,6 +67,6 @@ describe('ForgotPassword', () => {
     });
 
     // El formulario sigue visible para que el usuario pueda reintentar
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
   });
 });

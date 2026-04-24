@@ -44,15 +44,15 @@ describe('Login', () => {
   it('renderiza los campos de email y contraseña', () => {
     render(<MemoryRouter><Login /></MemoryRouter>);
 
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Contraseña')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
   });
 
-  it('muestra el link "¿Olvidaste tu contraseña?"', () => {
+  it('muestra el link "Olvidé mi contraseña"', () => {
     render(<MemoryRouter><Login /></MemoryRouter>);
 
-    const link = screen.getByRole('link', { name: '¿Olvidaste tu contraseña?' });
+    const link = screen.getByRole('link', { name: 'Olvidé mi contraseña' });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/forgot-password');
   });
@@ -62,8 +62,8 @@ describe('Login', () => {
 
     render(<MemoryRouter><Login /></MemoryRouter>);
 
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'user@test.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Contraseña'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
@@ -77,8 +77,8 @@ describe('Login', () => {
 
     render(<MemoryRouter><Login /></MemoryRouter>);
 
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'user@test.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Contraseña'), { target: { value: 'wrongpass' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'wrongpass' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
@@ -89,14 +89,12 @@ describe('Login', () => {
   });
 
   it('el botón muestra "Entrando..." y queda deshabilitado mientras procesa el submit', async () => {
-    // Promesa que nunca resuelve — simula loading infinito
     mockLogin.mockReturnValueOnce(new Promise(() => {}));
 
     render(<MemoryRouter><Login /></MemoryRouter>);
 
-    // Los inputs tienen required, hay que rellenarlos para que el form se submita
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'user@test.com' } });
-    fireEvent.change(screen.getByPlaceholderText('Contraseña'), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@test.com' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     await waitFor(() => {
