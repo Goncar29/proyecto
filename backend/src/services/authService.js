@@ -142,10 +142,16 @@ const refreshAccessToken = async (refreshTokenPlain) => {
 const logoutUser = async (refreshTokenPlain) => {
     if (!refreshTokenPlain) return;
     const tokenHash = sha256(refreshTokenPlain);
+    // Buscar userId antes de revocar para poder auditarlo
+    const stored = await prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        select: { userId: true },
+    }).catch(() => null);
     await prisma.refreshToken.updateMany({
         where: { tokenHash, revokedAt: null },
         data: { revokedAt: new Date() },
     }).catch(() => {}); // silent — don't break logout if DB fails
+    if (stored?.userId) await logAudit(stored.userId, 'logout').catch(() => {});
 };
 
 /**

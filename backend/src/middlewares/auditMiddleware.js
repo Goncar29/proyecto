@@ -8,23 +8,31 @@ const { logAudit } = require('../services/audit');
  *   res.locals.auditMetadata = { changedFields, fromStatus, ... }
  * que se mergean con el auto-enrichment antes de persistir.
  */
+const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 const auditMiddleware = (action) => (req, res, next) => {
     res.on('finish', () => {
-        // Solo registrar si la respuesta fue exitosa
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-            const autoMeta = {
-                method:     req.method,
-                path:       req.originalUrl,
-                statusCode: res.statusCode,
-                ip:         req.ip,
-            };
-            // Merge con metadata específica del controller (si existe)
-            const extra = res.locals.auditMetadata ?? {};
-            const metadata = { ...autoMeta, ...extra };
+        // Sin usuario autenticado no hay nada que registrar
+        if (!req.user?.id) return;
 
-            // fire-and-forget — no bloquea la respuesta; errores se logean dentro de logAudit
-            logAudit(req.user?.id, action || `${req.method} ${req.originalUrl}`, metadata).catch(() => {});
-        }
+        const isWrite = WRITE_METHODS.has(req.method);
+        const isSuccess = res.statusCode >= 200 && res.statusCode < 300;
+
+        // Lecturas (GET): solo éxito — evitar ruido de 404s en consultas normales
+        // Escrituras (POST/PUT/PATCH/DELETE): siempre — los intentos fallidos son auditables
+        if (!isWrite && !isSuccess) return;
+
+        const autoMeta = {
+            method:     req.method,
+            path:       req.originalUrl,
+            statusCode: res.statusCode,
+            ip:         req.ip,
+        };
+        const extra = res.locals.auditMetadata ?? {};
+        const metadata = { ...autoMeta, ...extra };
+
+        // fire-and-forget — no bloquea la respuesta; errores se logean dentro de logAudit
+        logAudit(req.user.id, action || `${req.method} ${req.originalUrl}`, metadata).catch(() => {});
     });
     next();
 };
