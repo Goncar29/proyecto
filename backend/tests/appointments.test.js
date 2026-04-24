@@ -63,7 +63,7 @@ describe('POST /api/appointments', () => {
         const res = await request(app)
             .post('/api/appointments')
             .set('Authorization', `Bearer ${tokens.patient}`)
-            .send({ timeBlockId: timeBlock.id, doctorId: users.doctor.id, reason: 'Consulta general' });
+            .send({ timeBlockId: timeBlock.id, notes: 'Consulta general' });
 
         expect(res.status).toBe(201);
         expect(res.body).toHaveProperty('id');
@@ -76,13 +76,13 @@ describe('POST /api/appointments', () => {
         await request(app)
             .post('/api/appointments')
             .set('Authorization', `Bearer ${tokens.patient}`)
-            .send({ timeBlockId: timeBlock.id, doctorId: users.doctor.id });
+            .send({ timeBlockId: timeBlock.id });
 
         // Segunda cita sobre el mismo bloque
         const res = await request(app)
             .post('/api/appointments')
             .set('Authorization', `Bearer ${tokens.patient}`)
-            .send({ timeBlockId: timeBlock.id, doctorId: users.doctor.id });
+            .send({ timeBlockId: timeBlock.id });
 
         expect(res.status).toBe(409);
     });
@@ -91,7 +91,7 @@ describe('POST /api/appointments', () => {
         const res = await request(app)
             .post('/api/appointments')
             .set('Authorization', `Bearer ${tokens.patient}`)
-            .send({ timeBlockId: 999999, doctorId: users.doctor.id });
+            .send({ timeBlockId: 999999 });
 
         expect(res.status).toBe(404);
     });
@@ -99,7 +99,7 @@ describe('POST /api/appointments', () => {
     it('sin autenticación → 401', async () => {
         const res = await request(app)
             .post('/api/appointments')
-            .send({ timeBlockId: timeBlock.id, doctorId: users.doctor.id });
+            .send({ timeBlockId: timeBlock.id });
 
         expect(res.status).toBe(401);
     });

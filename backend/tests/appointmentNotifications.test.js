@@ -58,7 +58,7 @@ beforeEach(async () => {
     const res = await request(app)
         .post('/api/appointments')
         .set('Authorization', `Bearer ${tokens.patient}`)
-        .send({ timeBlockId: timeBlock.id, doctorId: users.doctor.id });
+        .send({ timeBlockId: timeBlock.id });
 
     expect(res.status).toBe(201);
     appointment = res.body;

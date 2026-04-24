@@ -28,7 +28,9 @@ exports.getTimeBlockById = async (req, res, next) => {
         const id = parseInt(req.params.id, 10);
         const block = await prisma.timeBlock.findUnique({ where: { id } });
         if (!block) {
-            return res.status(404).json({ error: 'TimeBlock not found' });
+            const err = new Error('TimeBlock not found');
+            err.status = 404; err.code = 'NOT_FOUND';
+            return next(err);
         }
         res.status(200).json(block);
     } catch (error) {
@@ -63,7 +65,9 @@ exports.updateTimeBlock = async (req, res, next) => {
         const block = await prisma.timeBlock.findUnique({ where: { id } });
 
         if (!block) {
-            return res.status(404).json({ error: 'TimeBlock not found' });
+            const err = new Error('TimeBlock not found');
+            err.status = 404; err.code = 'NOT_FOUND';
+            return next(err);
         }
 
         // Validar que el doctor sea dueño del bloque
@@ -89,7 +93,9 @@ exports.deleteTimeBlock = async (req, res, next) => {
         const block = await prisma.timeBlock.findUnique({ where: { id } });
 
         if (!block) {
-            return res.status(404).json({ error: 'TimeBlock not found' });
+            const err = new Error('TimeBlock not found');
+            err.status = 404; err.code = 'NOT_FOUND';
+            return next(err);
         }
 
         // Validar que el doctor sea dueño

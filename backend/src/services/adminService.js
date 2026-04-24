@@ -1,5 +1,7 @@
 const prisma = require('../utils/prismaClient');
+const bcrypt = require('bcryptjs');
 const { parsePagination, buildPage } = require('./paginate');
+const { SALT_ROUNDS } = require('../config');
 
 // Crear bloque de tiempo con validaciones y chequeo de solapamiento
 const createTimeBlockService = async (doctorId, startTime, endTime) => {
@@ -146,13 +148,19 @@ const updateUserService = async (id, data) => {
     }
     if (data.role) data.role = data.role.toUpperCase();
 
+    const updateData = {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+    };
+
+    if (data.password !== undefined) {
+        updateData.password = await bcrypt.hash(data.password, SALT_ROUNDS);
+    }
+
     return await prisma.user.update({
         where: { id: Number(id) },
-        data: {
-            name: data.name,
-            email: data.email,
-            role: data.role,
-        },
+        data: updateData,
         select: {
             id: true,
             email: true,

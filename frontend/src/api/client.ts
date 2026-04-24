@@ -45,10 +45,13 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
 
   const token = localStorage.getItem('token');
 
+  const isFormData = rest.body instanceof FormData;
+
   const res = await fetch(url, {
     credentials: 'include', // always include cookies (refresh token cookie)
     headers: {
-      'Content-Type': 'application/json',
+      // FormData: let the browser set Content-Type + boundary automatically
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
@@ -65,7 +68,7 @@ async function request<T>(endpoint: string, opts: RequestOptions = {}): Promise<
         const retryRes = await fetch(url, {
           credentials: 'include',
           headers: {
-            'Content-Type': 'application/json',
+            ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
             Authorization: `Bearer ${newToken}`,
             ...headers,
           },
@@ -120,30 +123,10 @@ export const api = {
   /**
    * Multipart upload — do NOT set Content-Type manually.
    * The browser adds it automatically with the correct boundary.
+   * Uses request() so 401 retry logic applies the same as other methods.
    */
-  postFile: <T>(endpoint: string, formData: FormData) => {
-    const token = localStorage.getItem('token');
-    return fetch(`${BASE_URL}${endpoint}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: res.statusText }));
-        const message =
-          (Array.isArray(body.details) && body.details[0]) ||
-          body.error ||
-          body.message ||
-          'Upload failed';
-        const err = new Error(message) as Error & { status: number; code?: string };
-        err.status = res.status;
-        err.code = body.code;
-        throw err;
-      }
-      return res.json() as Promise<T>;
-    });
-  },
+  postFile: <T>(endpoint: string, formData: FormData) =>
+    request<T>(endpoint, { method: 'POST', body: formData }),
 
   patch: <T>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),

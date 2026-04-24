@@ -7,16 +7,6 @@ const createAppointmentSchema = Joi.object({
             'number.positive': 'El bloque de tiempo debe ser un número positivo.',
             'any.required': 'El bloque de tiempo es obligatorio.',
         }),
-    doctorId: Joi.number().integer().positive().required()
-        .messages({
-            'number.base': 'El ID del doctor debe ser un número.',
-            'number.positive': 'El ID del doctor debe ser un número positivo.',
-            'any.required': 'El doctor es obligatorio.',
-        }),
-    reason: Joi.string().max(500).optional()
-        .messages({
-            'string.max': 'El motivo no puede superar los 500 caracteres.',
-        }),
     notes: Joi.string().max(500).optional()
         .messages({
             'string.max': 'Las notas no pueden superar los 500 caracteres.',
